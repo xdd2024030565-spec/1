@@ -16,6 +16,8 @@
     --danger-hover: #b91c1c;
     --card-bg: #f9fafb;
     --radius: 6px;
+    --nav-bg: #ffffff;
+    --nav-shadow: 0 -1px 12px rgba(0,0,0,0.06);
   }
 
   @media (prefers-color-scheme: dark) {
@@ -29,6 +31,8 @@
       --danger: #ef4444;
       --danger-hover: #f87171;
       --card-bg: #1f2937;
+      --nav-bg: #1f2937;
+      --nav-shadow: 0 -1px 12px rgba(0,0,0,0.3);
     }
   }
 
@@ -41,7 +45,7 @@
     line-height: 1.6;
     max-width: 640px;
     margin: 0 auto;
-    padding: 24px 16px 48px;
+    padding: 24px 16px 72px;
   }
 
   h1 {
@@ -196,34 +200,113 @@
     margin-bottom: 16px;
     background: var(--card-bg);
   }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 640px;
+    display: flex;
+    background: var(--nav-bg);
+    box-shadow: var(--nav-shadow);
+    border-top: 1px solid var(--border);
+    z-index: 100;
+  }
+  .nav-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.72rem;
+    padding: 10px 4px 12px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    transition: color 0.15s;
+    font-family: inherit;
+  }
+  .nav-btn:hover { color: var(--fg); }
+  .nav-btn.active { color: var(--accent); font-weight: 600; }
+  .nav-icon { font-size: 1.2rem; line-height: 1; }
+  .nav-label { font-size: 0.68rem; }
+
+  .placeholder-content {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+    padding: 60px 20px;
+  }
 </style>
 </head>
 <body>
 
-<h1>网址储存</h1>
+<div class="panel active" id="panel-links">
+  <h1>网址储存</h1>
 
-<details class="settings">
-  <summary>设置 (首次使用请先填写 Token)</summary>
-  <div class="settings-body">
-    <label for="token">GitHub Personal Access Token</label>
-    <input type="password" id="token" placeholder="ghp_xxxxxx" autocomplete="off">
-    <p class="settings-hint">
-      需要一个带 <strong>repo</strong> 权限的 Token。
-      <a href="https://github.com/settings/tokens/new?scopes=repo&description=网址储存" target="_blank" rel="noopener">点这里创建</a>，
-      创建后复制粘贴到上方。Token 只保存在你浏览器的 localStorage 中，不会上传到任何服务器。
-    </p>
-  </div>
-</details>
+  <details class="settings">
+    <summary>设置 (首次使用请先填写 Token)</summary>
+    <div class="settings-body">
+      <label for="token">GitHub Personal Access Token</label>
+      <input type="password" id="token" placeholder="ghp_xxxxxx" autocomplete="off">
+      <p class="settings-hint">
+        需要一个带 <strong>repo</strong> 权限的 Token。
+        <a href="https://github.com/settings/tokens/new?scopes=repo&description=网址储存" target="_blank" rel="noopener">点这里创建</a>，
+        创建后复制粘贴到上方。Token 只保存在你浏览器的 localStorage 中，不会上传到任何服务器。
+      </p>
+    </div>
+  </details>
 
-<form class="add-form" id="addForm">
-  <input type="text" id="urlInput" placeholder="粘贴网址，自动获取标题..." autocomplete="off">
-  <button type="submit" id="addBtn">添加</button>
-</form>
+  <form class="add-form" id="addForm">
+    <input type="text" id="urlInput" placeholder="粘贴网址，自动获取标题..." autocomplete="off">
+    <button type="submit" id="addBtn">添加</button>
+  </form>
 
-<div id="errorBox" class="error-msg" style="display:none;"></div>
-<div id="status" class="status-msg" style="display:none;"></div>
+  <div id="errorBox" class="error-msg" style="display:none;"></div>
+  <div id="status" class="status-msg" style="display:none;"></div>
 
-<ul class="link-list" id="linkList"></ul>
+  <ul class="link-list" id="linkList"></ul>
+</div>
+
+<div class="panel" id="panel-2">
+  <h1>待开发</h1>
+  <div class="placeholder-content">此栏目尚未开放，敬请期待。</div>
+</div>
+
+<div class="panel" id="panel-3">
+  <h1>待开发</h1>
+  <div class="placeholder-content">此栏目尚未开放，敬请期待。</div>
+</div>
+
+<div class="panel" id="panel-4">
+  <h1>待开发</h1>
+  <div class="placeholder-content">此栏目尚未开放，敬请期待。</div>
+</div>
+
+<nav class="bottom-nav" id="bottomNav">
+  <button class="nav-btn active" data-panel="panel-links">
+    <span class="nav-icon">&#128279;</span>
+    <span class="nav-label">网址</span>
+  </button>
+  <button class="nav-btn" data-panel="panel-2">
+    <span class="nav-icon">&#9744;</span>
+    <span class="nav-label">待定</span>
+  </button>
+  <button class="nav-btn" data-panel="panel-3">
+    <span class="nav-icon">&#9744;</span>
+    <span class="nav-label">待定</span>
+  </button>
+  <button class="nav-btn" data-panel="panel-4">
+    <span class="nav-icon">&#9744;</span>
+    <span class="nav-label">待定</span>
+  </button>
+</nav>
 
 <script>
 (function () {
@@ -386,6 +469,22 @@
 
   tokenInput.value = getToken();
   tokenInput.addEventListener("change", function () { saveToken(tokenInput.value.trim()); loadLinks(); });
+
+  var navButtons = document.querySelectorAll(".nav-btn");
+  var panels = document.querySelectorAll(".panel");
+
+  function switchPanel(panelId) {
+    panels.forEach(function (p) { p.classList.toggle("active", p.id === panelId); });
+    navButtons.forEach(function (b) { b.classList.toggle("active", b.getAttribute("data-panel") === panelId); });
+    localStorage.setItem("active_panel", panelId);
+  }
+
+  navButtons.forEach(function (btn) {
+    btn.addEventListener("click", function () { switchPanel(btn.getAttribute("data-panel")); });
+  });
+
+  var savedPanel = localStorage.getItem("active_panel");
+  if (savedPanel) switchPanel(savedPanel);
 
   if (getToken()) { loadLinks(); }
   else { linkList.innerHTML = '<li class="empty">请先在「设置」中填写 GitHub Token</li>'; }
