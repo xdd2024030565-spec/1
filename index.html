@@ -54,53 +54,6 @@
     margin-bottom: 24px;
   }
 
-  .settings {
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px;
-    margin-bottom: 24px;
-    background: var(--card-bg);
-  }
-  .settings summary {
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 0.9rem;
-    color: var(--muted);
-    user-select: none;
-  }
-  .settings-body { margin-top: 14px; }
-  .settings-body label {
-    display: block;
-    font-size: 0.8rem;
-    color: var(--muted);
-    margin-bottom: 4px;
-    margin-top: 10px;
-  }
-  .settings-body input {
-    width: 100%;
-    padding: 8px 10px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--bg);
-    color: var(--fg);
-    font-size: 0.85rem;
-    font-family: monospace;
-  }
-  .settings-body input:focus {
-    outline: none;
-    border-color: var(--accent);
-  }
-  .settings-hint {
-    font-size: 0.75rem;
-    color: var(--muted);
-    margin-top: 6px;
-    line-height: 1.5;
-  }
-  .settings-hint a {
-    color: var(--accent);
-    text-decoration: none;
-  }
-
   .add-form {
     display: flex;
     gap: 8px;
@@ -250,19 +203,6 @@
 <div class="panel active" id="panel-links">
   <h1>网址储存</h1>
 
-  <details class="settings">
-    <summary>设置 (首次使用请先填写 Token)</summary>
-    <div class="settings-body">
-      <label for="token">GitHub Personal Access Token</label>
-      <input type="password" id="token" placeholder="ghp_xxxxxx" autocomplete="off">
-      <p class="settings-hint">
-        需要一个带 <strong>repo</strong> 权限的 Token。
-        <a href="https://github.com/settings/tokens/new?scopes=repo&description=网址储存" target="_blank" rel="noopener">点这里创建</a>，
-        创建后复制粘贴到上方。Token 只保存在你浏览器的 localStorage 中，不会上传到任何服务器。
-      </p>
-    </div>
-  </details>
-
   <form class="add-form" id="addForm">
     <input type="text" id="urlInput" placeholder="粘贴网址，自动获取标题..." autocomplete="off">
     <button type="submit" id="addBtn">添加</button>
@@ -317,8 +257,8 @@
   var BRANCH = "main";
   var FILE_PATH = "links.json";
   var API_BASE = "https://api.github.com";
+  var TOKEN = "[REDACTED]";
 
-  var tokenInput = document.getElementById("token");
   var addForm = document.getElementById("addForm");
   var urlInput = document.getElementById("urlInput");
   var addBtn = document.getElementById("addBtn");
@@ -330,13 +270,9 @@
   var fileSha = null;
   var busy = false;
 
-  function getToken() { return localStorage.getItem("gh_token") || ""; }
-  function saveToken(t) { localStorage.setItem("gh_token", t); }
-
   function ghRequest(method, path, body) {
-    var token = getToken();
     var headers = { "Accept": "application/vnd.github.v3+json" };
-    if (token) headers["Authorization"] = "token " + token;
+    headers["Authorization"] = "token " + TOKEN;
     var opts = { method: method, headers: headers };
     if (body) opts.body = JSON.stringify(body);
     return fetch(API_BASE + path, opts).then(function (res) {
@@ -356,7 +292,6 @@
   function hideStatus() { statusEl.style.display = "none"; }
 
   function loadLinks() {
-    if (!getToken()) { showError("请先在「设置」中填写 GitHub Token。"); return; }
     showStatus("加载中...");
     clearError();
     ghRequest("GET", "/repos/" + OWNER + "/" + REPO + "/contents/" + FILE_PATH + "?ref=" + BRANCH)
@@ -449,7 +384,6 @@
     var rawUrl = urlInput.value.trim();
     if (!rawUrl) return;
     var url = normalizeUrl(rawUrl);
-    if (!getToken()) { showError("请先在「设置」中填写 GitHub Token。"); return; }
     busy = true;
     addBtn.disabled = true;
     addBtn.textContent = "获取中...";
@@ -467,9 +401,6 @@
     });
   });
 
-  tokenInput.value = getToken();
-  tokenInput.addEventListener("change", function () { saveToken(tokenInput.value.trim()); loadLinks(); });
-
   var navButtons = document.querySelectorAll(".nav-btn");
   var panels = document.querySelectorAll(".panel");
 
@@ -486,8 +417,7 @@
   var savedPanel = localStorage.getItem("active_panel");
   if (savedPanel) switchPanel(savedPanel);
 
-  if (getToken()) { loadLinks(); }
-  else { linkList.innerHTML = '<li class="empty">请先在「设置」中填写 GitHub Token</li>'; }
+  loadLinks();
 })();
 </script>
 
