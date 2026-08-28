@@ -257,7 +257,7 @@
   var BRANCH = "main";
   var FILE_PATH = "links.json";
   var API_BASE = "https://api.github.com";
-  var TOKEN = atob("Z2hwX0NsM3hUbUVxRThXM0phcXJEZGlpQmhGeHZLY1FFcTFXTVZrel0=");
+  var TOKEN_FILE = "token.json";
 
   var addForm = document.getElementById("addForm");
   var urlInput = document.getElementById("urlInput");
@@ -269,10 +269,19 @@
   var links = [];
   var fileSha = null;
   var busy = false;
+  var token = null;
+
+  // 动态加载 Token
+  function loadToken() {
+    return fetch(TOKEN_FILE)
+      .then(function (res) { return res.json(); })
+      .then(function (data) { token = data.token; })
+      .catch(function (err) { showError("Token 加载失败，请检查 token.json 文件"); throw err; });
+  }
 
   function ghRequest(method, path, body) {
     var headers = { "Accept": "application/vnd.github.v3+json" };
-    headers["Authorization"] = "token " + TOKEN;
+    headers["Authorization"] = "token " + token;
     var opts = { method: method, headers: headers };
     if (body) opts.body = JSON.stringify(body);
     return fetch(API_BASE + path, opts).then(function (res) {
@@ -417,7 +426,8 @@
   var savedPanel = localStorage.getItem("active_panel");
   if (savedPanel) switchPanel(savedPanel);
 
-  loadLinks();
+  // 初始化：先加载 Token，再加载链接
+  loadToken().then(function () { loadLinks(); }).catch(function () { showError("初始化失败"); });
 })();
 </script>
 
