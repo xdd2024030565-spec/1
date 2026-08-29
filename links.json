@@ -1,13 +1,23 @@
 {
-  "siteName": "网址储存",
+  "siteName": "ç½åå¨å­",
   "settings": {
     "theme": "auto"
   },
   "categories": [
     {
       "id": "default",
-      "name": "常用"
+      "name": "å¸¸ç¨"
     }
   ],
-  "links": []
+  "links": [
+    {
+      "id": "mte6li5321f17",
+      "url": "https://1",
+      "title": "https://1",
+      "categoryId": "default",
+      "note": "",
+      "pinned": false,
+      "added": "2026-08-29T09:31:45.303Z"
+    }
+  ]
 }
