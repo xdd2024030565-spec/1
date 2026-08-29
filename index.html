@@ -154,7 +154,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
   var BRANCH = "main";
   var FILE_PATH = "links.json";
   var API_BASE = "https://api.yongjiu.ccwu.cc";
-  var S = { siteName:"网址储存", settings:{theme:"auto"}, categories:[{id:"default",name:"常用"}], links:[], curCat:"all", searchQ:"", fileSha:null, busy:false, undoCb:null };
+  var S = { siteName:"网址储存", settings:{theme:"auto"}, categories:[{id:"default",name:"常用"}], links:[], curCat:"all", searchQ:"", fileSha:null, busy:false, undoCb:null, saveRetrying:false };
 
   function $(id) { return document.getElementById(id); }
   function gid() { return Date.now().toString(36) + Math.random().toString(36).substr(2,5); }
@@ -168,6 +168,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
   function hideStatus() { $("status").style.display="none"; }
   function showError(m) { var e=$("errorBox"); e.textContent=m; e.style.display="block"; }
   function clearError() { $("errorBox").style.display="none"; }
+
+  function b64Encode(str) {
+    return btoa(new TextEncoder().encode(str).reduce(function(s,b){return s+String.fromCharCode(b)},""));
+  }
+  function b64Decode(b64) {
+    var bin = atob(b64.replace(/\n/g,""));
+    var bytes = new Uint8Array(bin.length);
+    for (var i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  }
 
   function showToast(msg, btnText, cb) {
     var t=$("toast"), b=$("toastBtn");
@@ -194,7 +204,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
       .then(function(d){
         S.fileSha=d.sha;
         if(d.content && d.encoding==="base64") {
-          var p=JSON.parse(atob(d.content.replace(/\n/g,"")));
+          var jsonStr = b64Decode(d.content);
+          var p = JSON.parse(jsonStr);
           if(Array.isArray(p)) {
             S.links=p.map(function(i){ return {id:gid(), url:i.url, title:i.title||i.url, categoryId:"default", note:"", pinned:false, added:i.added||new Date().toISOString()}; });
           } else {
@@ -213,7 +224,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
       .catch(function(e){
         S.fileSha=null;
         hideStatus();
-        if(e.message && e.message.indexOf("404")!==-1) { /* file doesn't exist yet */ }
+        if(e.message && e.message.indexOf("404")!==-1) { /* new file */ }
         else { showError("加载失败: "+e.message); }
         applyTheme(); updTitle(); renderAll();
       });
@@ -222,12 +233,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
   function saveData() {
     showStatus("保存中...");
     clearError();
-    var content=btoa(unescape(encodeURIComponent(JSON.stringify({siteName:S.siteName, settings:S.settings, categories:S.categories, links:S.links}, null, 2))));
-    var body={message:"更新数据", content:content, branch:BRANCH};
-    if(S.fileSha) body.sha=S.fileSha;
+    var content = b64Encode(JSON.stringify({siteName:S.siteName, settings:S.settings, categories:S.categories, links:S.links}, null, 2));
+    var body = {message:"更新数据", content:content, branch:BRANCH};
+    if(S.fileSha) body.sha = S.fileSha;
     return ghReq("PUT", "/repos/"+OWNER+"/"+REPO+"/contents/"+FILE_PATH, body)
       .then(function(d){ S.fileSha=d.content?d.content.sha:S.fileSha; hideStatus(); })
-      .catch(function(e){ hideStatus(); showError("保存失败: "+e.message); throw e; });
+      .catch(function(e){
+        if(e.message && e.message.indexOf("does not match")!==-1 && !S.saveRetrying) {
+          S.saveRetrying=true;
+          hideStatus();
+          showStatus("同步数据中...");
+          return loadData().then(function(){
+            S.saveRetrying=false;
+            return saveData();
+          });
+        }
+        hideStatus();
+        showError("保存失败: "+e.message);
+        S.saveRetrying=false;
+        throw e;
+      });
   }
 
   function applyTheme() {
@@ -304,8 +329,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
     h+='<button id="addBtn">添加</button>';
     h+='</div>';
     c.innerHTML=h;
-    var addBtn=$("addBtn");
-    var urlInput=$("urlInput");
+    var addBtn=$("addBtn"), urlInput=$("urlInput");
     if(addBtn) addBtn.onclick=function(){ addLink(); };
     if(urlInput) urlInput.onkeypress=function(e){ if(e.key==="Enter") addLink(); };
   }
@@ -410,19 +434,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
     var p=$("edit-"+id);
     if(!p) return;
     if(p.classList.contains("active")) p.classList.remove("active");
-    else {
-      document.querySelectorAll(".edit-panel.active").forEach(function(x){ x.classList.remove("active"); });
-      p.classList.add("active");
-    }
+    else { document.querySelectorAll(".edit-panel.active").forEach(function(x){ x.classList.remove("active"); }); p.classList.add("active"); }
   }
 
   function saveEdit(id) {
     var l=S.links.find(function(x){ return x.id===id; });
     if(!l) return;
-    var t=$("et-"+id).value.trim();
-    var u=$("eu-"+id).value.trim();
-    var c=$("ec-"+id).value;
-    var n=$("en-"+id).value.trim();
+    var t=$("et-"+id).value.trim(), u=$("eu-"+id).value.trim(), c=$("ec-"+id).value, n=$("en-"+id).value.trim();
     if(!t||!u) return;
     if(!/^https?:\/\//.test(u)) u="https://"+u;
     l.title=t; l.url=u; l.categoryId=c; l.note=n;
@@ -432,23 +450,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
   function deleteLink(id) {
     var i=S.links.findIndex(function(x){ return x.id===id; });
     if(i===-1) return;
-    var del=S.links.splice(i,1)[0];
-    var idx=i;
-    renderAll();
-    saveData();
-    showToast("已删除","撤销",function(){
-      S.links.splice(idx,0,del);
-      renderAll();
-      saveData();
-    });
+    var del=S.links.splice(i,1)[0], idx=i;
+    renderAll(); saveData();
+    showToast("已删除","撤销",function(){ S.links.splice(idx,0,del); renderAll(); saveData(); });
   }
 
   function togglePin(id) {
     var l=S.links.find(function(x){ return x.id===id; });
     if(!l) return;
-    l.pinned=!l.pinned;
-    renderAll();
-    saveData();
+    l.pinned=!l.pinned; renderAll(); saveData();
   }
 
   function addCategory() {
@@ -456,8 +466,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
     if(!i) return;
     var n=i.value.trim();
     if(!n) return;
-    S.categories.push({id:gid(), name:n});
-    i.value="";
+    S.categories.push({id:gid(), name:n}); i.value="";
     saveData().then(function(){ renderAll(); });
   }
 
@@ -475,15 +484,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
     var d={siteName:S.siteName, settings:S.settings, categories:S.categories, links:S.links};
     var b=new Blob([JSON.stringify(d,null,2)], {type:"application/json"});
     var a=document.createElement("a");
-    a.href=URL.createObjectURL(b);
-    a.download="网址备份_"+new Date().toISOString().slice(0,10)+".json";
-    a.click();
-    URL.revokeObjectURL(a.href);
+    a.href=URL.createObjectURL(b); a.download="网址备份_"+new Date().toISOString().slice(0,10)+".json"; a.click(); URL.revokeObjectURL(a.href);
   }
 
   function importData(ev) {
-    var f=ev.target.files[0];
-    if(!f) return;
+    var f=ev.target.files[0]; if(!f) return;
     var r=new FileReader();
     r.onload=function(e){
       try {
@@ -498,7 +503,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
     r.readAsText(f);
   }
 
-  // ===== Global =====
   window.switchPanel=function(id){
     document.querySelectorAll(".panel").forEach(function(p){ p.classList.toggle("active", p.id===id); });
     document.querySelectorAll(".nav-btn").forEach(function(b){ b.classList.toggle("active", b.getAttribute("data-panel")===id); });
@@ -517,12 +521,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
     c.innerHTML=h;
   };
 
-  // ===== Event delegation for dynamic buttons =====
   document.addEventListener("click", function(e){
     var btn=e.target.closest("button");
     if(!btn) return;
-    var act=btn.getAttribute("data-act");
-    var id=btn.getAttribute("data-id");
+    var act=btn.getAttribute("data-act"), id=btn.getAttribute("data-id");
     if(!act) return;
     if(act==="selcat") { S.curCat=id; localStorage.setItem("lastCat", id); renderCatTabs(); renderLinks(); }
     else if(act==="newcat") { window.switchPanel("panel-categories"); $("newCatInput").focus(); }
@@ -540,12 +542,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
     else if(act==="delcat") deleteCategory(id);
   });
 
-  // ===== Static element events =====
-  document.querySelectorAll(".nav-btn").forEach(function(btn){
-    btn.onclick=function(){ window.switchPanel(btn.getAttribute("data-panel")); };
-  });
-  var slb=$("settingsLinkBtn");
-  if(slb) slb.onclick=function(){ window.switchPanel("panel-settings"); };
+  document.querySelectorAll(".nav-btn").forEach(function(btn){ btn.onclick=function(){ window.switchPanel(btn.getAttribute("data-panel")); }; });
+  var slb=$("settingsLinkBtn"); if(slb) slb.onclick=function(){ window.switchPanel("panel-settings"); };
   var sni=$("siteNameInput");
   if(sni) {
     sni.onblur=function(){ var n=this.value.trim(); if(n && n!==S.siteName){ S.siteName=n; updTitle(); saveData(); } };
@@ -563,7 +561,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
   var qs=$("quickSearch"); if(qs) qs.oninput=function(){ window.handleQuickSearch(this.value); };
   var si=$("searchInput"); if(si) si.oninput=function(){ window.handleSearch(this.value); };
 
-  // ===== Init =====
   var sp=localStorage.getItem("active_panel");
   if(sp) window.switchPanel(sp);
   loadData();

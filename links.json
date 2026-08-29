@@ -1,12 +1,12 @@
 {
-  "siteName": "ç½åå¨å­",
+  "siteName": "网址储存",
   "settings": {
     "theme": "auto"
   },
   "categories": [
     {
       "id": "default",
-      "name": "å¸¸ç¨"
+      "name": "常用"
     }
   ],
   "links": [
