@@ -2,14 +2,14 @@
 <html lang="zh-CN" data-theme="auto">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>网址储存</title>
 <style>
 :root{
   --bg:#fff;--bg2:#f5f5f7;--fg:#1a1a1a;--fg2:#86868b;--border:#d2d2d7;
   --accent:#0071e3;--accent-bg:rgba(0,113,227,.08);--danger:#ff3b30;
   --card:#f5f5f7;--sidebar-bg:rgba(245,245,247,.98);--topbar-bg:rgba(255,255,255,.92);
-  --radius:12px;--maxw:720px;--sidebar-w:280px
+  --radius:12px;--maxw:720px;--sidebar-w:280px;--ease:cubic-bezier(.2,.8,.2,1)
 }
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]){
   --bg:#000;--bg2:#1c1c1e;--fg:#f5f5f7;--fg2:#86868b;--border:#38383a;
@@ -22,46 +22,67 @@
   --card:#1c1c1e;--sidebar-bg:rgba(28,28,30,.98);--topbar-bg:rgba(0,0,0,.92)
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*{touch-action:manipulation}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--fg);line-height:1.6;font-size:16px;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 
 /* ====== 顶栏 ====== */
 .topbar{position:fixed;top:0;left:0;right:0;height:56px;display:flex;align-items:center;gap:12px;padding:0 16px;background:var(--topbar-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);z-index:400}
-.hamburger{width:40px;height:40px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;background:transparent;border:none;cursor:pointer;border-radius:8px;flex-shrink:0;transition:background .2s}
+.hamburger{width:40px;height:40px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;background:transparent;border:none;cursor:pointer;border-radius:8px;flex-shrink:0;transition:background .15s var(--ease)}
 .hamburger:hover{background:var(--accent-bg)}
-.hamburger span{display:block;width:20px;height:2px;background:var(--fg);border-radius:2px;transition:all .3s ease}
+.hamburger span{display:block;width:20px;height:2px;background:var(--fg);border-radius:2px;transition:transform .2s var(--ease),opacity .15s ease}
 body.sidebar-open .hamburger span:nth-child(1){transform:translateY(7px) rotate(45deg)}
 body.sidebar-open .hamburger span:nth-child(2){opacity:0}
 body.sidebar-open .hamburger span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
 .topbar-title{font-size:1.2rem;font-weight:600;letter-spacing:-.01em}
 
-/* ====== 侧边栏 ====== */
-.sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.2);opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s;z-index:250}
-body.sidebar-open .sidebar-overlay{opacity:1;visibility:visible}
-.sidebar{position:fixed;top:0;left:0;width:var(--sidebar-w);height:100%;background:var(--sidebar-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-right:1px solid var(--border);transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:300;overflow-y:auto;padding-top:56px}
-body.sidebar-open .sidebar{transform:translateX(0);box-shadow:2px 0 20px rgba(0,0,0,.08)}
+/* ====== 遮罩层（核心修复：pointer-events 替代 visibility） ====== */
+.sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.2);opacity:0;pointer-events:none;transition:opacity .2s ease;z-index:250}
+body.sidebar-open .sidebar-overlay{opacity:1;pointer-events:auto}
+
+/* ====== 侧边栏（GPU加速 + 仅展开时计算blur） ====== */
+.sidebar{
+  position:fixed;top:0;left:0;width:var(--sidebar-w);height:100%;
+  background:var(--sidebar-bg);border-right:1px solid var(--border);
+  transform:translate3d(-100%,0,0);
+  transition:transform .2s var(--ease);
+  will-change:transform;
+  z-index:300;overflow-y:auto;
+  overscroll-behavior:contain;
+  contain:layout style;
+  padding-top:56px
+}
+body.sidebar-open .sidebar{
+  transform:translate3d(0,0,0);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  box-shadow:2px 0 20px rgba(0,0,0,.08)
+}
 .sidebar-nav{padding:8px 0}
 
 /* ====== 导航树 ====== */
 .nav-label{padding:16px 16px 8px;font-size:.7rem;font-weight:600;color:var(--fg2);text-transform:uppercase;letter-spacing:.06em}
 .nav-section{margin-bottom:2px}
-.nav-toggle{display:flex;align-items:center;gap:10px;width:100%;padding:11px 16px;font-size:.95rem;font-weight:600;color:var(--fg);cursor:pointer;transition:background .15s;user-select:none;background:transparent;border:none;font-family:inherit;text-align:left}
+.nav-toggle{display:flex;align-items:center;gap:10px;width:100%;padding:11px 16px;font-size:.95rem;font-weight:600;color:var(--fg);cursor:pointer;transition:background .12s ease;user-select:none;background:transparent;border:none;font-family:inherit;text-align:left}
 .nav-toggle:hover{background:var(--accent-bg)}
+.nav-toggle:active{background:var(--accent-bg)}
 .nav-toggle .nav-icon{font-size:1.1rem;width:20px;text-align:center}
-.nav-toggle .nav-chevron{margin-left:auto;font-size:.7rem;color:var(--fg2);transition:transform .25s}
+.nav-toggle .nav-chevron{margin-left:auto;font-size:.7rem;color:var(--fg2);transition:transform .2s var(--ease)}
 .nav-toggle.expanded .nav-chevron{transform:rotate(90deg)}
-.nav-children{max-height:0;overflow:hidden;transition:max-height .3s ease}
+.nav-children{max-height:0;overflow:hidden;transition:max-height .2s var(--ease)}
 
 /* 二级 */
-.nav-item{display:flex;align-items:center;gap:10px;width:100%;padding:10px 16px 10px 40px;font-size:.92rem;color:var(--fg);cursor:pointer;transition:background .15s;user-select:none;background:transparent;border:none;font-family:inherit;text-align:left}
+.nav-item{display:flex;align-items:center;gap:10px;width:100%;padding:10px 16px 10px 40px;font-size:.92rem;color:var(--fg);cursor:pointer;transition:background .12s ease;user-select:none;background:transparent;border:none;font-family:inherit;text-align:left}
 .nav-item:hover{background:var(--accent-bg)}
+.nav-item:active{background:var(--accent-bg)}
 .nav-item .nav-icon{font-size:1rem;width:18px;text-align:center}
-.nav-item .nav-chevron{margin-left:auto;font-size:.65rem;color:var(--fg2);transition:transform .25s}
+.nav-item .nav-chevron{margin-left:auto;font-size:.65rem;color:var(--fg2);transition:transform .2s var(--ease)}
 .nav-item.expanded .nav-chevron{transform:rotate(90deg)}
-.nav-sub-children{max-height:0;overflow:hidden;transition:max-height .3s ease}
+.nav-sub-children{max-height:0;overflow:hidden;transition:max-height .2s var(--ease)}
 
 /* 三级（叶子项） */
-.nav-leaf{display:flex;align-items:center;gap:10px;width:100%;padding:9px 16px 9px 64px;font-size:.88rem;color:var(--fg2);cursor:pointer;transition:all .15s;user-select:none;background:transparent;border:none;font-family:inherit;text-align:left;border-left:2px solid transparent}
+.nav-leaf{display:flex;align-items:center;gap:10px;width:100%;padding:9px 16px 9px 64px;font-size:.88rem;color:var(--fg2);cursor:pointer;transition:background .12s ease,color .12s ease;user-select:none;background:transparent;border:none;font-family:inherit;text-align:left;border-left:2px solid transparent}
 .nav-leaf:hover{color:var(--fg);background:var(--accent-bg)}
+.nav-leaf:active{background:var(--accent-bg)}
 .nav-leaf.active{color:var(--accent);font-weight:600;border-left-color:var(--accent);background:var(--accent-bg)}
 .nav-leaf .nav-icon{font-size:.85rem;width:16px;text-align:center}
 
@@ -124,7 +145,7 @@ body.sidebar-open .sidebar{transform:translateX(0);box-shadow:2px 0 20px rgba(0,
 .error-msg{color:var(--danger);font-size:.9rem;padding:12px 16px;background:rgba(255,59,48,.08);border-radius:var(--radius);margin-bottom:16px}
 
 /* ====== Toast ====== */
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--fg);color:var(--bg);padding:14px 20px;border-radius:12px;font-size:.9rem;display:flex;align-items:center;gap:16px;z-index:500;transition:transform .3s ease;max-width:90%;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--fg);color:var(--bg);padding:14px 20px;border-radius:12px;font-size:.9rem;display:flex;align-items:center;gap:16px;z-index:500;transition:transform .2s var(--ease);max-width:90%;box-shadow:0 4px 12px rgba(0,0,0,.15)}
 .toast.show{transform:translateX(-50%) translateY(0)}
 .toast button{border:none;background:transparent;color:var(--accent);font-weight:600;cursor:pointer;font-size:.9rem;font-family:inherit}
 
@@ -434,7 +455,8 @@ body.sidebar-open .sidebar{transform:translateX(0);box-shadow:2px 0 20px rgba(0,
       h+='<span>'+esc(section.label)+'</span>';
       h+='<span class="nav-chevron">▶</span>';
       h+='</button>';
-      h+='<div class="nav-children" style="max-height:'+(secExp?'2000px':'0')+'px">';
+      // 展开时用 none（无高度限制、无动画延迟），折叠时用 0
+      h+='<div class="nav-children" style="max-height:'+(secExp?'none':'0')+'">';
 
       section.children.forEach(function(item){
         if(item.type==="group"){
@@ -444,7 +466,7 @@ body.sidebar-open .sidebar{transform:translateX(0);box-shadow:2px 0 20px rgba(0,
           h+='<span>'+esc(item.label)+'</span>';
           if(item.children&&item.children.length)h+='<span class="nav-chevron">▶</span>';
           h+='</button>';
-          h+='<div class="nav-sub-children" style="max-height:'+(grpExp?'1000px':'0')+'px">';
+          h+='<div class="nav-sub-children" style="max-height:'+(grpExp?'none':'0')+'">';
           if(item.children){
             item.children.forEach(function(leaf){
               h+=renderNavLeaf(leaf);
@@ -465,7 +487,6 @@ body.sidebar-open .sidebar{transform:translateX(0);box-shadow:2px 0 20px rgba(0,
     var cls='nav-leaf';
     if(isL2)cls+=' nav-leaf-l2';
     if(S.activePanel===leaf.id)cls+=' active';
-    var padStyle=isL2?'':'';
     return '<button class="'+cls+'" data-nav-page="'+leaf.id+'">'
       +'<span class="nav-icon">'+leaf.icon+'</span>'
       +'<span>'+esc(leaf.label)+'</span>'
@@ -478,14 +499,37 @@ body.sidebar-open .sidebar{transform:translateX(0);box-shadow:2px 0 20px rgba(0,
     return v==="1";
   }
 
+  /* 展开折叠：用 scrollHeight 精确动画，消除 max-height 固定值的末尾卡顿 */
   function toggleNavExpand(id){
     var btn=document.querySelector('[data-nav-toggle="'+id+'"]');
     if(!btn)return;
     var wasExp=btn.classList.contains("expanded");
     btn.classList.toggle("expanded");
     var target=btn.nextElementSibling;
-    if(target){
-      target.style.maxHeight=wasExp?'0px':(target.classList.contains("nav-children")?'2000px':'1000px');
+    if(!target)return;
+
+    if(wasExp){
+      /* —— 折叠 —— */
+      /* 若当前 max-height 为 none，先设为实际高度再强制回流，然后动画到 0 */
+      if(target.style.maxHeight==="none"||target.style.maxHeight===""){
+        target.style.maxHeight=target.scrollHeight+"px";
+        target.offsetHeight; /* 强制回流 */
+      }
+      target.style.maxHeight="0px";
+    }else{
+      /* —— 展开 —— */
+      /* 先设为 scrollHeight 触发动画，动画结束后改为 none 解除高度限制 */
+      target.style.maxHeight=target.scrollHeight+"px";
+      var done=false;
+      var handler=function(){
+        if(done)return;
+        done=true;
+        if(target.style.maxHeight!=="0px")target.style.maxHeight="none";
+        target.removeEventListener("transitionend",handler);
+      };
+      target.addEventListener("transitionend",handler);
+      /* 超时兜底，防止 transitionend 不触发 */
+      setTimeout(handler,300);
     }
     localStorage.setItem("nav-expand-"+id,wasExp?"0":"1");
   }
