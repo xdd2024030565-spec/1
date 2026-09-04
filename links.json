@@ -9,5 +9,15 @@
       "name": "常用"
     }
   ],
-  "links": []
+  "links": [
+    {
+      "id": "mtn1sgfcbm78j",
+      "url": "https://你好",
+      "title": "https://你好",
+      "categoryId": "default",
+      "note": "",
+      "pinned": false,
+      "added": "2026-09-04T14:27:07.176Z"
+    }
+  ]
 }
