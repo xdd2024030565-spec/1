@@ -140,6 +140,22 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
 .cat-item-actions button{border:none;background:transparent;color:var(--fg2);font-size:.85rem;padding:6px 10px;border-radius:8px;cursor:pointer;font-family:inherit}
 .cat-item-actions button:hover{color:var(--accent);background:var(--accent-bg)}
 .cat-item-actions button.danger:hover{color:var(--danger);background:rgba(255,59,48,.1)}
+
+/* ====== 风格切换 ====== */
+.theme-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-bottom:20px}
+.theme-card{border:2px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:all .2s var(--ease);background:var(--card)}
+.theme-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.theme-card.active{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
+.theme-preview{height:56px;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px}
+.theme-swatch{border-radius:8px;border:1px solid rgba(128,128,128,.15)}
+.theme-swatch-bg{width:36px;height:36px}
+.theme-swatch-accent{width:18px;height:18px;border-radius:50%}
+.theme-name{padding:8px 10px;font-size:.85rem;font-weight:600;text-align:center}
+.theme-del{display:block;width:100%;padding:5px;border:none;border-top:1px solid var(--border);background:transparent;color:var(--danger);font-size:.78rem;cursor:pointer;font-family:inherit}
+.theme-del:hover{background:rgba(255,59,48,.08)}
+.theme-help{margin-top:16px;padding:14px;background:var(--card);border-radius:var(--radius);font-size:.82rem;color:var(--fg2);line-height:1.7}
+.theme-help code{display:block;margin:8px 0;padding:8px 12px;background:var(--bg);border-radius:8px;font-size:.78rem;overflow-x:auto;white-space:pre}
+
 @media(max-width:480px){.main-content{padding:72px 12px 24px}.link-actions{flex-direction:column;gap:2px}.auth-options{flex-direction:column}}
 </style>
 </head>
@@ -234,7 +250,7 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
   </div>
   <div class="settings-group">
     <div class="setting-item">
-      <div><div class="setting-label">主题</div><div class="setting-desc">选择外观主题</div></div>
+      <div><div class="setting-label">基础主题</div><div class="setting-desc">亮色/暗色/跟随系统</div></div>
       <div class="theme-buttons">
         <button class="theme-btn" id="themeLight">亮色</button>
         <button class="theme-btn" id="themeDark">暗色</button>
@@ -245,6 +261,24 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
   <button class="action-btn" id="exportBtn">导出为 JSON 文件</button>
   <input type="file" id="importFile" accept=".json" style="display:none;">
   <button class="action-btn" id="importBtn">从 JSON 文件导入</button>
+</div>
+
+<div class="panel" id="panel-themes">
+  <div class="page-header"><h1>风格切换</h1></div>
+  <div class="theme-grid" id="themeGrid"></div>
+  <button class="action-btn" id="importThemeBtn">📥 导入风格文件 (.css)</button>
+  <input type="file" id="importThemeFile" accept=".css" style="display:none;">
+  <button class="action-btn" id="exportThemeBtn">📤 导出当前风格</button>
+  <div class="theme-help">
+    <b>风格文件格式</b>：CSS 变量文件，包含如下格式的变量定义：<code>:root {
+  --bg: #f0f6ff;
+  --accent: #0066cc;
+  --card: #dbeafe;
+  /* ...更多变量 */
+}</code>
+    可从网上下载 CSS 主题文件，或自己编写，导入后即可切换使用。<br>
+    <b>支持变量</b>：--bg --bg2 --fg --fg2 --border --accent --accent-bg --danger --card --sidebar-bg --topbar-bg --radius
+  </div>
 </div>
 
 <div class="panel" id="panel-password">
@@ -280,7 +314,6 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
 
   /* ================================================================
    *  导航配置（adminOnly: true 的项对访客隐藏）
-   *  type:"action" → 点击执行 action 而非切换面板
    * ================================================================ */
   var NAV_CONFIG=[
     {id:"tools",label:"工具",icon:"🧰",type:"section",defaultExpanded:true,children:[
@@ -292,6 +325,7 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
     ]},
     {id:"settings-section",label:"设置",icon:"⚙️",type:"section",defaultExpanded:false,children:[
       {id:"panel-settings",label:"网站设置",icon:"🔧",type:"page",adminOnly:true},
+      {id:"panel-themes",label:"风格切换",icon:"🎨",type:"page"},
       {id:"panel-password",label:"密码管理",icon:"🔑",type:"page",adminOnly:true},
       {id:"action-logout",label:"退出登录",icon:"🚪",type:"action",action:"logout"}
     ]}
@@ -303,6 +337,116 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
   var ADMIN_PANELS=["panel-categories","panel-settings","panel-password"];
   var S={siteName:"网址储存",settings:{theme:"auto"},categories:[{id:"default",name:"常用"}],links:[],curCat:"all",searchQ:"",fileSha:null,busy:false,undoCb:null,saveRetrying:false,activePanel:"panel-links",authMode:"loading",authToken:null};
 
+  /* ================================================================
+   *  内置风格定义
+   * ================================================================ */
+  var BUILTIN_THEMES=[
+    {id:"light",name:"亮色",type:"builtin",vars:null,preview:{bg:"#fff",accent:"#0071e3"}},
+    {id:"dark",name:"暗色",type:"builtin",vars:null,preview:{bg:"#000",accent:"#0a84ff"}},
+    {id:"auto",name:"跟随系统",type:"builtin",vars:null,preview:{bg:"#808080",accent:"#0071e3"}},
+    {id:"ocean",name:"海洋蓝",type:"builtin",vars:{"--bg":"#f0f6ff","--bg2":"#dbeafe","--fg":"#0a1f3c","--fg2":"#5a7a9e","--border":"#b0c8e8","--accent":"#0066cc","--accent-bg":"rgba(0,102,204,.1)","--danger":"#e03030","--card":"#dbeafe","--sidebar-bg":"rgba(240,246,255,.98)","--topbar-bg":"rgba(255,255,255,.92)"},preview:{bg:"#f0f6ff",accent:"#0066cc"}},
+    {id:"forest",name:"森林绿",type:"builtin",vars:{"--bg":"#f0faf0","--bg2":"#dcf0dc","--fg":"#1a3a1a","--fg2":"#5a7a5a","--border":"#b0d0b0","--accent":"#2e8b2e","--accent-bg":"rgba(46,139,46,.1)","--danger":"#e03030","--card":"#dcf0dc","--sidebar-bg":"rgba(240,250,240,.98)","--topbar-bg":"rgba(255,255,255,.92)"},preview:{bg:"#f0faf0",accent:"#2e8b2e"}},
+    {id:"warm",name:"暖阳橙",type:"builtin",vars:{"--bg":"#fff8f0","--bg2":"#ffeed8","--fg":"#3a2a10","--fg2":"#8a7a5a","--border":"#e8d0a8","--accent":"#e07000","--accent-bg":"rgba(224,112,0,.1)","--danger":"#e03030","--card":"#ffeed8","--sidebar-bg":"rgba(255,248,240,.98)","--topbar-bg":"rgba(255,255,255,.92)"},preview:{bg:"#fff8f0",accent:"#e07000"}},
+    {id:"cyber",name:"赛博紫",type:"builtin",vars:{"--bg":"#0d001a","--bg2":"#1a0a2e","--fg":"#e0d0ff","--fg2":"#8a7ab0","--border":"#3a1a5a","--accent":"#bf00ff","--accent-bg":"rgba(191,0,255,.15)","--danger":"#ff3366","--card":"#1a0a2e","--sidebar-bg":"rgba(26,10,46,.98)","--topbar-bg":"rgba(13,0,26,.92)"},preview:{bg:"#0d001a",accent:"#bf00ff"}},
+    {id:"rose",name:"玫瑰粉",type:"builtin",vars:{"--bg":"#fff5f7","--bg2":"#ffe0e8","--fg":"#3a1020","--fg2":"#8a5a6a","--border":"#e8b0c0","--accent":"#e0407a","--accent-bg":"rgba(224,64,122,.1)","--danger":"#e03030","--card":"#ffe0e8","--sidebar-bg":"rgba(255,245,247,.98)","--topbar-bg":"rgba(255,255,255,.92)"},preview:{bg:"#fff5f7",accent:"#e0407a"}},
+    {id:"slate",name:"石板灰",type:"builtin",vars:{"--bg":"#f0f0f2","--bg2":"#e0e0e4","--fg":"#1a1a2e","--fg2":"#5a5a6e","--border":"#c0c0c8","--accent":"#4a4a6e","--accent-bg":"rgba(74,74,110,.1)","--danger":"#e03030","--card":"#e0e0e4","--sidebar-bg":"rgba(240,240,242,.98)","--topbar-bg":"rgba(255,255,255,.92)"},preview:{bg:"#f0f0f2",accent:"#4a4a6e"}}
+  ];
+
+  function getCustomThemes(){try{return JSON.parse(localStorage.getItem("custom_themes")||"[]");}catch(e){return[];}}
+  function saveCustomThemes(t){localStorage.setItem("custom_themes",JSON.stringify(t));}
+  function getAllThemes(){return BUILTIN_THEMES.concat(getCustomThemes());}
+  function getCurrentThemeId(){return localStorage.getItem("current_theme")||(S.settings.theme||"auto");}
+  function setCurrentThemeId(id){localStorage.setItem("current_theme",id);}
+  function applyThemeStyle(){
+    var themeId=getCurrentThemeId();
+    var allThemes=getAllThemes();
+    var theme=allThemes.find(function(t){return t.id===themeId;});
+    var old=document.getElementById("custom-theme-style");
+    if(old)old.remove();
+    if(!theme||theme.id==="light"){document.documentElement.setAttribute("data-theme","light");}
+    else if(theme.id==="dark"){document.documentElement.setAttribute("data-theme","dark");}
+    else if(theme.id==="auto"){document.documentElement.setAttribute("data-theme","auto");}
+    else if(theme.vars){
+      document.documentElement.setAttribute("data-theme","light");
+      var css=":root{";
+      for(var k in theme.vars)css+=k+":"+theme.vars[k]+";";
+      css+="}";
+      var style=document.createElement("style");
+      style.id="custom-theme-style";
+      style.textContent=css;
+      document.head.appendChild(style);
+    }
+    ["Light","Dark","Auto"].forEach(function(n){var b=$("theme"+n);if(b)b.classList.remove("active");});
+    var btnMap={light:"Light",dark:"Dark",auto:"Auto"};
+    var btn=$("theme"+btnMap[themeId]);
+    if(btn)btn.classList.add("active");
+  }
+  function switchTheme(id){setCurrentThemeId(id);applyThemeStyle();renderThemes();}
+  function parseCSSVars(cssText){
+    var vars={};
+    var rootRegex=/:root\s*\{([^}]*)\}/g;var rootMatch;
+    while(rootMatch=rootRegex.exec(cssText)){
+      var varRegex=/(-{2}[a-zA-Z0-9_-]+)\s*:\s*([^;]+)\s*;?/g;var match;
+      while(match=varRegex.exec(rootMatch[1])){vars[match[1]]=match[2].trim();}
+    }
+    return vars;
+  }
+  function importThemeFile(ev){
+    var f=ev.target.files[0];if(!f)return;
+    var r=new FileReader();
+    r.onload=function(e){
+      var vars=parseCSSVars(e.target.result);
+      var keys=Object.keys(vars);
+      if(keys.length===0){showToast("未找到CSS变量，请检查文件格式",null,null);return;}
+      var name=f.name.replace(/\.css$/i,"");
+      var themes=getCustomThemes();
+      themes.push({id:"custom-"+Date.now(),name:name,type:"custom",vars:vars,preview:{bg:vars["--bg"]||"#fff",accent:vars["--accent"]||"#0071e3"}});
+      saveCustomThemes(themes);
+      renderThemes();
+      showToast("风格「"+name+"」导入成功",null,null);
+    };
+    r.readAsText(f);ev.target.value="";
+  }
+  function exportCurrentTheme(){
+    var themeId=getCurrentThemeId();
+    var theme=getAllThemes().find(function(t){return t.id===themeId;});
+    if(!theme||!theme.vars){showToast("请先选择一个可导出的风格",null,null);return;}
+    var css="/* "+theme.name+" */\n:root {\n";
+    for(var k in theme.vars)css+="  "+k+": "+theme.vars[k]+";\n";
+    css+="}\n";
+    var b=new Blob([css],{type:"text/css"});
+    var a=document.createElement("a");
+    a.href=URL.createObjectURL(b);a.download=theme.name+".css";a.click();URL.revokeObjectURL(a.href);
+  }
+  function deleteCustomTheme(id){
+    var themes=getCustomThemes().filter(function(t){return t.id!==id;});
+    saveCustomThemes(themes);
+    if(getCurrentThemeId()===id){setCurrentThemeId("auto");applyThemeStyle();}
+    renderThemes();
+  }
+  function renderThemes(){
+    var grid=$("themeGrid");if(!grid)return;
+    var curId=getCurrentThemeId();
+    var all=getAllThemes();
+    var h="";
+    all.forEach(function(t){
+      var isActive=t.id===curId;
+      var pv=t.preview||{bg:"#fff",accent:"#0071e3"};
+      h+='<div class="theme-card'+(isActive?' active':'')+'" data-act="switchtheme" data-id="'+t.id+'">';
+      h+='<div class="theme-preview" style="background:'+pv.bg+'">';
+      h+='<div class="theme-swatch theme-swatch-bg" style="background:'+pv.bg+'"></div>';
+      h+='<div class="theme-swatch theme-swatch-accent" style="background:'+pv.accent+'"></div>';
+      h+='</div>';
+      h+='<div class="theme-name">'+esc(t.name)+'</div>';
+      if(t.type==="custom")h+='<button class="theme-del" data-act="deltheme" data-id="'+t.id+'">删除</button>';
+      h+='</div>';
+    });
+    grid.innerHTML=h;
+  }
+
+  /* ================================================================
+   *  工具函数
+   * ================================================================ */
   function $(id){return document.getElementById(id);}
   function gid(){return Date.now().toString(36)+Math.random().toString(36).substr(2,5);}
   function getDomain(u){try{return new URL(u).hostname.replace(/^www\./,"");}catch(e){return u;}}
@@ -327,174 +471,101 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
     fetch(AUTH_API+"/auth/status")
       .then(function(r){return r.json();})
       .then(function(d){
-        if(d.setupNeeded){
-          showAuthPage("setup");
-        }else{
+        if(d.setupNeeded){showAuthPage("setup");}
+        else{
           var token=sessionStorage.getItem("authToken");
-          if(token){
-            verifyToken(token);
-          }else if(localStorage.getItem("guestMode")==="1"){
-            enterGuestMode();
-          }else{
-            showAuthPage("login");
-          }
+          if(token){verifyToken(token);}
+          else if(localStorage.getItem("guestMode")==="1"){enterGuestMode();}
+          else{showAuthPage("login");}
         }
       })
       .catch(function(){showAuthPage("login");});
   }
-
   function verifyToken(token){
     fetch(AUTH_API+"/auth/verify",{method:"POST",headers:{"Authorization":"Bearer "+token}})
       .then(function(r){return r.json();})
       .then(function(d){
-        if(d.valid){
-          S.authToken=token;
-          S.authMode="admin";
-          enterMainInterface();
-        }else{
-          sessionStorage.removeItem("authToken");
-          showAuthPage("login");
-        }
+        if(d.valid){S.authToken=token;S.authMode="admin";enterMainInterface();}
+        else{sessionStorage.removeItem("authToken");showAuthPage("login");}
       })
       .catch(function(){showAuthPage("login");});
   }
-
   function showAuthPage(page){
     $("loginPage").classList.toggle("hidden",page!=="login");
     $("setupPage").classList.toggle("hidden",page!=="setup");
     $("topbar").style.display="none";
     $("mainContent").style.display="none";
     closeSidebar();
-    if(page==="login"){
-      $("loginForm").style.display="none";
-      $("loginError").textContent="";
-      $("loginPassword").value="";
-      $("adminCard").classList.remove("selected");
-      $("guestCard").classList.remove("selected");
-    }
+    if(page==="login"){$("loginForm").style.display="none";$("loginError").textContent="";$("loginPassword").value="";$("adminCard").classList.remove("selected");$("guestCard").classList.remove("selected");}
   }
-
-  function enterGuestMode(){
-    S.authMode="guest";
-    S.authToken=null;
-    localStorage.setItem("guestMode","1");
-    enterMainInterface();
-  }
-
+  function enterGuestMode(){S.authMode="guest";S.authToken=null;localStorage.setItem("guestMode","1");enterMainInterface();}
   function enterMainInterface(){
     $("loginPage").classList.add("hidden");
     $("setupPage").classList.add("hidden");
     $("topbar").style.display="flex";
     $("mainContent").style.display="block";
     var badge=$("authBadge");
-    if(badge){badge.style.display=(S.authMode==="guest")?"inline":"none";}
-    applyTheme();
+    if(badge)badge.style.display=(S.authMode==="guest")?"inline":"none";
+    applyThemeStyle();
     loadData();
   }
-
-  function handleGuestLogin(){
-    enterGuestMode();
-  }
-
-  function showLoginForm(){
-    $("guestCard").classList.remove("selected");
-    $("adminCard").classList.add("selected");
-    $("loginForm").style.display="flex";
-    $("loginPassword").focus();
-  }
-
+  function handleGuestLogin(){enterGuestMode();}
+  function showLoginForm(){$("guestCard").classList.remove("selected");$("adminCard").classList.add("selected");$("loginForm").style.display="flex";$("loginPassword").focus();}
   function handleAdminLogin(){
-    var pwd=$("loginPassword").value;
-    if(!pwd)return;
-    var btn=$("loginSubmitBtn");
-    btn.textContent="登录中...";btn.disabled=true;
-    $("loginError").textContent="";
+    var pwd=$("loginPassword").value;if(!pwd)return;
+    var btn=$("loginSubmitBtn");btn.textContent="登录中...";btn.disabled=true;$("loginError").textContent="";
     fetch(AUTH_API+"/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:pwd})})
       .then(function(r){return r.json();})
       .then(function(d){
-        if(d.token){
-          sessionStorage.setItem("authToken",d.token);
-          localStorage.removeItem("guestMode");
-          S.authToken=d.token;
-          S.authMode="admin";
-          enterMainInterface();
-        }else if(d.setupNeeded){
-          showAuthPage("setup");
-        }else{
-          $("loginError").textContent=d.error||"登录失败";
-          var lf=$("loginForm");lf.classList.add("shake");setTimeout(function(){lf.classList.remove("shake");},400);
-          btn.textContent="进入";btn.disabled=false;
-        }
+        if(d.token){sessionStorage.setItem("authToken",d.token);localStorage.removeItem("guestMode");S.authToken=d.token;S.authMode="admin";enterMainInterface();}
+        else if(d.setupNeeded){showAuthPage("setup");}
+        else{$("loginError").textContent=d.error||"登录失败";var lf=$("loginForm");lf.classList.add("shake");setTimeout(function(){lf.classList.remove("shake");},400);btn.textContent="进入";btn.disabled=false;}
       })
       .catch(function(){$("loginError").textContent="网络错误，请稍后重试";btn.textContent="进入";btn.disabled=false;});
   }
-
   function handleSetup(){
     var pwd=$("setupPassword").value,conf=$("setupConfirm").value;
     if(!pwd||pwd.length<8){$("setupError").textContent="密码至少8位";return;}
     if(pwd!==conf){$("setupError").textContent="两次密码不一致";return;}
-    var btn=$("setupSubmitBtn");
-    btn.textContent="设置中...";btn.disabled=true;
-    $("setupError").textContent="";
+    var btn=$("setupSubmitBtn");btn.textContent="设置中...";btn.disabled=true;$("setupError").textContent="";
     fetch(AUTH_API+"/auth/setup",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:pwd})})
       .then(function(r){return r.json();})
       .then(function(d){
-        if(d.token){
-          sessionStorage.setItem("authToken",d.token);
-          S.authToken=d.token;
-          S.authMode="admin";
-          enterMainInterface();
-        }else{
-          $("setupError").textContent=d.error||"设置失败";
-          btn.textContent="设置并进入";btn.disabled=false;
-        }
+        if(d.token){sessionStorage.setItem("authToken",d.token);S.authToken=d.token;S.authMode="admin";enterMainInterface();}
+        else{$("setupError").textContent=d.error||"设置失败";btn.textContent="设置并进入";btn.disabled=false;}
       })
       .catch(function(){$("setupError").textContent="网络错误，请稍后重试";btn.textContent="设置并进入";btn.disabled=false;});
   }
-
   function handleLogout(){
-    sessionStorage.removeItem("authToken");
-    localStorage.removeItem("guestMode");
-    S.authToken=null;
-    S.authMode="loading";
+    sessionStorage.removeItem("authToken");localStorage.removeItem("guestMode");
+    S.authToken=null;S.authMode="loading";
     S.links=[];S.categories=[{id:"default",name:"常用"}];S.settings={theme:"auto"};
     showAuthPage("login");
   }
-
   function handleChangePassword(){
     var cur=$("curPwdInput").value,np=$("newPwdInput").value,cp=$("confirmPwdInput").value;
     var msg=$("pwdMsg");
     if(!cur||!np||!cp){msg.textContent="请填写完整";msg.style.display="block";return;}
     if(np.length<8){msg.textContent="新密码至少8位";msg.style.display="block";return;}
     if(np!==cp){msg.textContent="两次新密码不一致";msg.style.display="block";return;}
-    var btn=$("changePwdBtn");
-    btn.textContent="修改中...";btn.disabled=true;
-    msg.style.display="none";
+    var btn=$("changePwdBtn");btn.textContent="修改中...";btn.disabled=true;msg.style.display="none";
     fetch(AUTH_API+"/auth/change-password",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+S.authToken},body:JSON.stringify({currentPassword:cur,newPassword:np})})
       .then(function(r){return r.json();})
       .then(function(d){
-        if(d.token){
-          sessionStorage.setItem("authToken",d.token);
-          S.authToken=d.token;
-          msg.textContent="✅ 密码修改成功";msg.style.display="block";
-          $("curPwdInput").value="";$("newPwdInput").value="";$("confirmPwdInput").value="";
-        }else{
-          msg.textContent=d.error||"修改失败";msg.style.display="block";
-        }
+        if(d.token){sessionStorage.setItem("authToken",d.token);S.authToken=d.token;msg.textContent="✅ 密码修改成功";msg.style.display="block";$("curPwdInput").value="";$("newPwdInput").value="";$("confirmPwdInput").value="";}
+        else{msg.textContent=d.error||"修改失败";msg.style.display="block";}
         btn.textContent="确认修改";btn.disabled=false;
       })
       .catch(function(){msg.textContent="网络错误";msg.style.display="block";btn.textContent="确认修改";btn.disabled=false;});
   }
 
   /* ================================================================
-   *  GitHub API（写操作附带 JWT，为将来服务端验证做准备）
+   *  GitHub API
    * ================================================================ */
   function ghReq(m,p,b){
     var opts={method:m,headers:{Accept:"application/vnd.github.v3+json"}};
     if(b)opts.body=JSON.stringify(b);
-    if((m==="PUT"||m==="POST"||m==="DELETE")&&S.authToken){
-      opts.headers["Authorization"]="Bearer "+S.authToken;
-    }
+    if((m==="PUT"||m==="POST"||m==="DELETE")&&S.authToken){opts.headers["Authorization"]="Bearer "+S.authToken;}
     return fetch(API_BASE+p,opts).then(function(res){
       if(res.status===401){handleLogout();throw new Error("登录已过期，请重新登录");}
       if(!res.ok)return res.json().catch(function(){return{}}).then(function(e){throw new Error(e.message||res.status+" "+res.statusText);});
@@ -502,38 +573,27 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
       return res.json();
     });
   }
-
   function loadData(){
     showStatus("加载中...");clearError();
     ghReq("GET","/repos/"+OWNER+"/"+REPO+"/contents/"+FILE_PATH+"?ref="+BRANCH)
       .then(function(d){
         S.fileSha=d.sha;
         if(d.content&&d.encoding==="base64"){
-          var jsonStr=b64Decode(d.content);
-          var p=JSON.parse(jsonStr);
-          if(Array.isArray(p)){
-            S.links=p.map(function(i){return{id:gid(),url:i.url,title:i.title||i.url,categoryId:"default",note:"",pinned:false,added:i.added||new Date().toISOString()};});
-          }else{
-            S.siteName=p.siteName||"网址储存";
-            S.settings=p.settings||{theme:"auto"};
-            S.categories=p.categories||[{id:"default",name:"常用"}];
-            S.links=p.links||[];
-          }
+          var jsonStr=b64Decode(d.content);var p=JSON.parse(jsonStr);
+          if(Array.isArray(p)){S.links=p.map(function(i){return{id:gid(),url:i.url,title:i.title||i.url,categoryId:"default",note:"",pinned:false,added:i.added||new Date().toISOString()};});}
+          else{S.siteName=p.siteName||"网址储存";S.settings=p.settings||{theme:"auto"};S.categories=p.categories||[{id:"default",name:"常用"}];S.links=p.links||[];}
         }
-        var st=localStorage.getItem("theme");
-        if(st)S.settings.theme=st;
         S.curCat=localStorage.getItem("lastCat")||"all";
         if(!S.categories.length)S.categories=[{id:"default",name:"常用"}];
-        hideStatus();applyTheme();updTitle();renderAll();
+        hideStatus();applyThemeStyle();updTitle();renderAll();
       })
       .catch(function(e){
         S.fileSha=null;hideStatus();
         if(e.message&&e.message.indexOf("404")!==-1){}
         else{showError("加载失败: "+e.message);}
-        applyTheme();updTitle();renderAll();
+        applyThemeStyle();updTitle();renderAll();
       });
   }
-
   function saveData(){
     if(S.authMode!=="admin")return Promise.resolve();
     showStatus("保存中...");clearError();
@@ -554,24 +614,14 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
   /* ================================================================
    *  主题 & 标题
    * ================================================================ */
-  function applyTheme(){
-    var t=S.settings.theme||"auto";
-    document.documentElement.setAttribute("data-theme",t);
-    localStorage.setItem("theme",t);
-    ["Light","Dark","Auto"].forEach(function(n){var b=$("theme"+n);if(b)b.classList.remove("active");});
-    var map={light:"Light",dark:"Dark",auto:"Auto"};
-    var btn=$("theme"+map[t]);
-    if(btn)btn.classList.add("active");
-  }
-  function setTheme(t){S.settings.theme=t;applyTheme();if(S.authMode==="admin")saveData();}
+  function setBaseTheme(t){setCurrentThemeId(t);applyThemeStyle();renderThemes();}
   function updTitle(){$("siteTitle").textContent=S.siteName;document.title=S.siteName;var i=$("siteNameInput");if(i)i.value=S.siteName;}
 
   /* ================================================================
-   *  侧边栏 & 导航渲染（adminOnly 项对访客隐藏）
+   *  侧边栏 & 导航渲染
    * ================================================================ */
   function renderNav(){
-    var nav=$("sidebarNav");
-    var h='<div class="nav-label">导航菜单</div>';
+    var nav=$("sidebarNav");var h='<div class="nav-label">导航菜单</div>';
     NAV_CONFIG.forEach(function(section){
       var secExp=isNavExpanded(section);
       h+='<div class="nav-section"><button class="nav-toggle'+(secExp?' expanded':'')+'" data-nav-toggle="'+section.id+'"><span class="nav-icon">'+section.icon+'</span><span>'+esc(section.label)+'</span><span class="nav-chevron">▶</span></button>';
@@ -580,56 +630,39 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
         if(item.adminOnly&&!canEdit())return;
         if(item.type==="group"){
           var grpExp=isNavExpanded(item);
-          var visibleChildren=item.children?item.children.filter(function(l){return!l.adminOnly||canEdit();}):[];
-          if(visibleChildren.length===0)return;
+          var vc=item.children?item.children.filter(function(l){return!l.adminOnly||canEdit();}):[];
+          if(vc.length===0)return;
           h+='<button class="nav-item'+(grpExp?' expanded':'')+'" data-nav-toggle="'+item.id+'"><span class="nav-icon">'+item.icon+'</span><span>'+esc(item.label)+'</span><span class="nav-chevron">▶</span></button>';
           h+='<div class="nav-sub-children" style="max-height:'+(grpExp?'none':'0')+'">';
-          visibleChildren.forEach(function(leaf){h+=renderNavLeaf(leaf);});
+          vc.forEach(function(leaf){h+=renderNavLeaf(leaf);});
           h+='</div>';
-        }else{
-          h+=renderNavLeaf(item,true);
-        }
+        }else{h+=renderNavLeaf(item,true);}
       });
       h+='</div></div>';
     });
     nav.innerHTML=h;
   }
-
   function renderNavLeaf(leaf,isL2){
     var cls='nav-leaf';if(isL2)cls+=' nav-leaf-l2';
-    if(leaf.type==="action"){
-      return'<button class="'+cls+'" data-nav-action="'+leaf.action+'"><span class="nav-icon">'+leaf.icon+'</span><span>'+esc(leaf.label)+'</span></button>';
-    }
+    if(leaf.type==="action"){return'<button class="'+cls+'" data-nav-action="'+leaf.action+'"><span class="nav-icon">'+leaf.icon+'</span><span>'+esc(leaf.label)+'</span></button>';}
     if(S.activePanel===leaf.id)cls+=' active';
     return'<button class="'+cls+'" data-nav-page="'+leaf.id+'"><span class="nav-icon">'+leaf.icon+'</span><span>'+esc(leaf.label)+'</span></button>';
   }
-
   function isNavExpanded(item){var v=localStorage.getItem("nav-expand-"+item.id);if(v===null)return item.defaultExpanded?true:false;return v==="1";}
-
   function toggleNavExpand(id){
     var btn=document.querySelector('[data-nav-toggle="'+id+'"]');if(!btn)return;
-    var wasExp=btn.classList.contains("expanded");
-    btn.classList.toggle("expanded");
+    var wasExp=btn.classList.contains("expanded");btn.classList.toggle("expanded");
     var target=btn.nextElementSibling;if(!target)return;
-    if(wasExp){
-      if(target.style.maxHeight==="none"||target.style.maxHeight===""){target.style.maxHeight=target.scrollHeight+"px";target.offsetHeight;}
-      target.style.maxHeight="0px";
-    }else{
-      target.style.maxHeight=target.scrollHeight+"px";
-      var done=false;
-      var handler=function(){if(done)return;done=true;if(target.style.maxHeight!=="0px")target.style.maxHeight="none";target.removeEventListener("transitionend",handler);};
-      target.addEventListener("transitionend",handler);
-      setTimeout(handler,300);
-    }
+    if(wasExp){if(target.style.maxHeight==="none"||target.style.maxHeight===""){target.style.maxHeight=target.scrollHeight+"px";target.offsetHeight;}target.style.maxHeight="0px";}
+    else{target.style.maxHeight=target.scrollHeight+"px";var done=false;var handler=function(){if(done)return;done=true;if(target.style.maxHeight!=="0px")target.style.maxHeight="none";target.removeEventListener("transitionend",handler);};target.addEventListener("transitionend",handler);setTimeout(handler,300);}
     localStorage.setItem("nav-expand-"+id,wasExp?"0":"1");
   }
-
   function openSidebar(){document.body.classList.add("sidebar-open");}
   function closeSidebar(){document.body.classList.remove("sidebar-open");}
   function toggleSidebar(){document.body.classList.toggle("sidebar-open");}
 
   /* ================================================================
-   *  面板切换（管理员面板对访客拦截）
+   *  面板切换
    * ================================================================ */
   function switchPanel(id){
     if(ADMIN_PANELS.indexOf(id)!==-1&&!canEdit())return;
@@ -641,55 +674,33 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
   }
 
   /* ================================================================
-   *  渲染（访客隐藏编辑控件）
+   *  渲染
    * ================================================================ */
-  function renderAll(){renderNav();renderCatTabs();renderLinks();renderCatList();renderSettings();}
-
+  function renderAll(){renderNav();renderCatTabs();renderLinks();renderCatList();renderSettings();renderThemes();}
   function renderCatTabs(){
     var c=$("catTabs");
     var h='<button class="cat-tab'+(S.curCat==="all"?" active":"")+'" data-act="selcat" data-id="all">全部('+S.links.length+')</button>';
-    S.categories.forEach(function(cat){
-      var cnt=S.links.filter(function(l){return l.categoryId===cat.id;}).length;
-      h+='<button class="cat-tab'+(S.curCat===cat.id?" active":"")+'" data-act="selcat" data-id="'+cat.id+'">'+esc(cat.name)+'('+cnt+')</button>';
-    });
+    S.categories.forEach(function(cat){var cnt=S.links.filter(function(l){return l.categoryId===cat.id;}).length;h+='<button class="cat-tab'+(S.curCat===cat.id?" active":"")+'" data-act="selcat" data-id="'+cat.id+'">'+esc(cat.name)+'('+cnt+')</button>';});
     if(canEdit())h+='<button class="cat-tab cat-tab-add" data-act="newcat">+ 新建</button>';
     c.innerHTML=h;
   }
-
-  function getFiltered(){
-    var l=S.links;
-    if(S.curCat!=="all")l=l.filter(function(x){return x.categoryId===S.curCat;});
-    if(S.searchQ){var q=S.searchQ;l=l.filter(function(x){return(x.title||"").toLowerCase().indexOf(q)!==-1||(x.url||"").toLowerCase().indexOf(q)!==-1||(x.note||"").toLowerCase().indexOf(q)!==-1;});}
-    return l;
-  }
-
+  function getFiltered(){var l=S.links;if(S.curCat!=="all")l=l.filter(function(x){return x.categoryId===S.curCat;});if(S.searchQ){var q=S.searchQ;l=l.filter(function(x){return(x.title||"").toLowerCase().indexOf(q)!==-1||(x.url||"").toLowerCase().indexOf(q)!==-1||(x.note||"").toLowerCase().indexOf(q)!==-1;});}return l;}
   function renderLinks(){
     var c=$("linkContainer");var links=getFiltered();var h="";
-    if(links.length===0){
-      h+='<div class="empty-state">'+(S.searchQ?"没有匹配的网址":"还没有网址"+(canEdit()?"，在下方添加吧":""))+'</div>';
-    }else{
-      var pin=links.filter(function(l){return l.pinned;});
-      var unpin=links.filter(function(l){return!l.pinned;});
-      var grps={today:[],week:[],earlier:[]};
-      unpin.forEach(function(l){grps[getTGroup(l.added)].push(l);});
+    if(links.length===0){h+='<div class="empty-state">'+(S.searchQ?"没有匹配的网址":"还没有网址"+(canEdit()?"，在下方添加吧":""))+'</div>';}
+    else{
+      var pin=links.filter(function(l){return l.pinned;});var unpin=links.filter(function(l){return!l.pinned;});
+      var grps={today:[],week:[],earlier:[]};unpin.forEach(function(l){grps[getTGroup(l.added)].push(l);});
       if(pin.length>0){h+='<div class="section-header">置顶</div><ul class="link-list">';pin.forEach(function(l){h+=renderCard(l);});h+='</ul>';}
       var gl={today:"今天",week:"本周",earlier:"更早"};
       for(var k in grps){if(grps[k].length>0){h+='<div class="section-header">'+gl[k]+'</div><ul class="link-list">';grps[k].forEach(function(l){h+=renderCard(l);});h+='</ul>';}}
     }
-    if(canEdit()){
-      var last=localStorage.getItem("lastAddCat")||"default";
-      h+='<div class="add-form" style="margin-top:24px;">';
-      h+='<input type="text" id="urlInput" placeholder="粘贴网址，自动获取标题..." autocomplete="off">';
-      h+='<select id="addCatSel">';
-      S.categories.forEach(function(c2){h+='<option value="'+c2.id+'"'+(c2.id===last?" selected":"")+'>'+esc(c2.name)+'</option>';});
-      h+='</select><button id="addBtn">添加</button></div>';
-    }
+    if(canEdit()){var last=localStorage.getItem("lastAddCat")||"default";h+='<div class="add-form" style="margin-top:24px;"><input type="text" id="urlInput" placeholder="粘贴网址，自动获取标题..." autocomplete="off"><select id="addCatSel">';S.categories.forEach(function(c2){h+='<option value="'+c2.id+'"'+(c2.id===last?" selected":"")+'>'+esc(c2.name)+'</option>';});h+='</select><button id="addBtn">添加</button></div>';}
     c.innerHTML=h;
     var addBtn=$("addBtn"),urlInput=$("urlInput");
     if(addBtn)addBtn.onclick=function(){addLink();};
     if(urlInput)urlInput.onkeypress=function(e){if(e.key==="Enter")addLink();};
   }
-
   function renderCard(l){
     var cat=S.categories.find(function(c){return c.id===l.categoryId;});
     var cn=cat?cat.name:"未分类";var dom=getDomain(l.url);var ts=timeAgo(l.added);var lt=getLetter(l.title);var fu=getFavUrl(l.url);
@@ -700,68 +711,23 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
     h+='<span class="dot">·</span><span>'+esc(cn)+'</span><span class="dot">·</span><span>'+ts+'</span>';
     if(l.note)h+='<span class="dot">·</span><span>'+esc(l.note)+'</span>';
     h+='</div></div>';
-    if(canEdit()){
-      h+='<div class="link-actions">';
-      h+='<button data-act="pin" data-id="'+l.id+'">'+(l.pinned?"取消置顶":"置顶")+'</button>';
-      h+='<button data-act="edit" data-id="'+l.id+'">编辑</button>';
-      h+='<button class="danger" data-act="del" data-id="'+l.id+'">删除</button>';
-      h+='</div>';
-    }
+    if(canEdit()){h+='<div class="link-actions"><button data-act="pin" data-id="'+l.id+'">'+(l.pinned?"取消置顶":"置顶")+'</button><button data-act="edit" data-id="'+l.id+'">编辑</button><button class="danger" data-act="del" data-id="'+l.id+'">删除</button></div>';}
     h+='</div>';
-    if(canEdit()){
-      h+='<div class="edit-panel" id="edit-'+l.id+'">';
-      h+='<input type="text" id="et-'+l.id+'" value="'+esc(l.title)+'" placeholder="标题">';
-      h+='<input type="text" id="eu-'+l.id+'" value="'+esc(l.url)+'" placeholder="网址">';
-      h+='<select id="ec-'+l.id+'">';
-      S.categories.forEach(function(c){h+='<option value="'+c.id+'"'+(c.id===l.categoryId?" selected":"")+'>'+esc(c.name)+'</option>';});
-      h+='</select><textarea id="en-'+l.id+'" placeholder="备注（可选）">'+esc(l.note||"")+'</textarea>';
-      h+='<div class="edit-actions"><button class="btn-save" data-act="save" data-id="'+l.id+'">完成</button><button class="btn-cancel" data-act="canceledit" data-id="'+l.id+'">取消</button></div></div>';
-    }
-    h+='</li>';
-    return h;
+    if(canEdit()){h+='<div class="edit-panel" id="edit-'+l.id+'"><input type="text" id="et-'+l.id+'" value="'+esc(l.title)+'" placeholder="标题"><input type="text" id="eu-'+l.id+'" value="'+esc(l.url)+'" placeholder="网址"><select id="ec-'+l.id+'">';S.categories.forEach(function(c){h+='<option value="'+c.id+'"'+(c.id===l.categoryId?" selected":"")+'>'+esc(c.name)+'</option>';});h+='</select><textarea id="en-'+l.id+'" placeholder="备注（可选）">'+esc(l.note||"")+'</textarea><div class="edit-actions"><button class="btn-save" data-act="save" data-id="'+l.id+'">完成</button><button class="btn-cancel" data-act="canceledit" data-id="'+l.id+'">取消</button></div></div>';}
+    h+='</li>';return h;
   }
-
   function renderCatList(){
     var c=$("catListContainer");if(!c)return;
     if(S.categories.length===0){c.innerHTML='<div class="empty-state">还没有分类</div>';return;}
-    var h="";
-    S.categories.forEach(function(cat){
-      var cnt=S.links.filter(function(l){return l.categoryId===cat.id;}).length;
-      h+='<div class="cat-item"><div class="cat-item-info"><div class="cat-item-name">'+esc(cat.name)+'</div><div class="cat-item-count">'+cnt+' 个链接</div></div>';
-      if(canEdit()){
-        h+='<div class="cat-item-actions">';
-        h+='<button data-act="rencat" data-id="'+cat.id+'">重命名</button>';
-        h+='<button class="danger" data-act="delcat" data-id="'+cat.id+'">删除</button>';
-        h+='</div>';
-      }
-      h+='</div>';
-    });
+    var h="";S.categories.forEach(function(cat){var cnt=S.links.filter(function(l){return l.categoryId===cat.id;}).length;h+='<div class="cat-item"><div class="cat-item-info"><div class="cat-item-name">'+esc(cat.name)+'</div><div class="cat-item-count">'+cnt+' 个链接</div></div>';if(canEdit()){h+='<div class="cat-item-actions"><button data-act="rencat" data-id="'+cat.id+'">重命名</button><button class="danger" data-act="delcat" data-id="'+cat.id+'">删除</button></div>';}h+='</div>';});
     c.innerHTML=h;
   }
-
-  function renderSettings(){var i=$("siteNameInput");if(i)i.value=S.siteName;applyTheme();}
+  function renderSettings(){var i=$("siteNameInput");if(i)i.value=S.siteName;applyThemeStyle();}
 
   /* ================================================================
-   *  链接/分类操作（访客不可写）
+   *  链接/分类操作
    * ================================================================ */
-  function addLink(){
-    if(!canEdit())return;
-    if(S.busy)return;
-    var inp=$("urlInput"),sel=$("addCatSel");if(!inp)return;
-    var ru=inp.value.trim();if(!ru)return;
-    var u=ru;if(!/^https?:\/\//.test(u))u="https://"+u;
-    var cid=sel?sel.value:"default";
-    localStorage.setItem("lastAddCat",cid);
-    S.busy=true;var btn=$("addBtn");
-    if(btn){btn.disabled=true;btn.textContent="获取中...";}
-    showStatus("正在获取标题...");
-    fetchTitle(u).then(function(t){
-      hideStatus();
-      S.links.unshift({id:gid(),url:u,title:t||u,categoryId:cid,note:"",pinned:false,added:new Date().toISOString()});
-      if(btn)btn.textContent="保存中...";
-      return saveData().then(function(){renderAll();inp.value="";if(btn){btn.textContent="添加";btn.disabled=false;}S.busy=false;});
-    }).catch(function(){hideStatus();if(btn){btn.textContent="添加";btn.disabled=false;}S.busy=false;});
-  }
+  function addLink(){if(!canEdit())return;if(S.busy)return;var inp=$("urlInput"),sel=$("addCatSel");if(!inp)return;var ru=inp.value.trim();if(!ru)return;var u=ru;if(!/^https?:\/\//.test(u))u="https://"+u;var cid=sel?sel.value:"default";localStorage.setItem("lastAddCat",cid);S.busy=true;var btn=$("addBtn");if(btn){btn.disabled=true;btn.textContent="获取中...";}showStatus("正在获取标题...");fetchTitle(u).then(function(t){hideStatus();S.links.unshift({id:gid(),url:u,title:t||u,categoryId:cid,note:"",pinned:false,added:new Date().toISOString()});if(btn)btn.textContent="保存中...";return saveData().then(function(){renderAll();inp.value="";if(btn){btn.textContent="添加";btn.disabled=false;}S.busy=false;});}).catch(function(){hideStatus();if(btn){btn.textContent="添加";btn.disabled=false;}S.busy=false;});}
   function fetchTitle(u){return fetch("https://corsproxy.io/?url="+encodeURIComponent(u)).then(function(r){return r.text();}).then(function(h){var m=h.match(/<title[^>]*>([^<]*)<\/title>/i);return m?m[1].trim():"";}).catch(function(){return"";});}
   function toggleEdit(id){var p=$("edit-"+id);if(!p)return;if(p.classList.contains("active"))p.classList.remove("active");else{document.querySelectorAll(".edit-panel.active").forEach(function(x){x.classList.remove("active");});p.classList.add("active");}}
   function saveEdit(id){if(!canEdit())return;var l=S.links.find(function(x){return x.id===id;});if(!l)return;var t=$("et-"+id).value.trim(),u=$("eu-"+id).value.trim(),c=$("ec-"+id).value,n=$("en-"+id).value.trim();if(!t||!u)return;if(!/^https?:\/\//.test(u))u="https://"+u;l.title=t;l.url=u;l.categoryId=c;l.note=n;saveData().then(function(){renderAll();});}
@@ -769,23 +735,14 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
   function togglePin(id){if(!canEdit())return;var l=S.links.find(function(x){return x.id===id;});if(!l)return;l.pinned=!l.pinned;renderAll();saveData();}
   function addCategory(){if(!canEdit())return;var i=$("newCatInput");if(!i)return;var n=i.value.trim();if(!n)return;S.categories.push({id:gid(),name:n});i.value="";saveData().then(function(){renderAll();});}
   function deleteCategory(id){if(!canEdit())return;if(S.categories.length<=1){showToast("至少保留一个分类",null,null);return;}var def=S.categories.find(function(c){return c.id!==id;});var cnt=S.links.filter(function(l){return l.categoryId===id;}).length;S.links.forEach(function(l){if(l.categoryId===id)l.categoryId=def.id;});S.categories=S.categories.filter(function(c){return c.id!==id;});if(S.curCat===id)S.curCat="all";saveData().then(function(){renderAll();if(cnt>0)showToast(cnt+"个链接已移至"+def.name,null,null);});}
-
-  /* ================================================================
-   *  导入/导出（管理员）
-   * ================================================================ */
   function exportData(){if(!canEdit())return;var d={siteName:S.siteName,settings:S.settings,categories:S.categories,links:S.links};var b=new Blob([JSON.stringify(d,null,2)],{type:"application/json"});var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="网址备份_"+new Date().toISOString().slice(0,10)+".json";a.click();URL.revokeObjectURL(a.href);}
   function importData(ev){if(!canEdit())return;var f=ev.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(e){try{var d=JSON.parse(e.target.result);if(d.siteName)S.siteName=d.siteName;if(d.settings)S.settings=d.settings;if(d.categories)S.categories=d.categories;if(d.links)S.links=d.links;saveData().then(function(){renderAll();showToast("导入成功",null,null);});}catch(err){showError("导入失败: 文件格式错误");}};r.readAsText(f);}
-
-  /* ================================================================
-   *  搜索
-   * ================================================================ */
   function handleQuickSearch(v){S.searchQ=v.trim().toLowerCase();renderLinks();}
   function handleSearch(v){var c=$("searchResults"),q=v.trim().toLowerCase();if(!q){c.innerHTML='<div class="empty-state">输入关键词开始搜索</div>';return;}var r=S.links.filter(function(l){return(l.title||"").toLowerCase().indexOf(q)!==-1||(l.url||"").toLowerCase().indexOf(q)!==-1||(l.note||"").toLowerCase().indexOf(q)!==-1;});if(r.length===0){c.innerHTML='<div class="empty-state">没有找到匹配的网址</div>';return;}var h='<ul class="link-list">';r.forEach(function(l){h+=renderCard(l);});h+='</ul>';c.innerHTML=h;}
 
   /* ================================================================
    *  事件监听
    * ================================================================ */
-  // 认证页面
   $("guestCard").onclick=handleGuestLogin;
   $("adminCard").onclick=showLoginForm;
   $("loginSubmitBtn").onclick=handleAdminLogin;
@@ -793,21 +750,15 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
   $("setupSubmitBtn").onclick=handleSetup;
   $("setupConfirm").onkeypress=function(e){if(e.key==="Enter")handleSetup();};
   $("setupGuestBtn").onclick=handleGuestLogin;
-  // 侧边栏
   $("hamburgerBtn").onclick=toggleSidebar;
   $("sidebarOverlay").onclick=closeSidebar;
   document.addEventListener("keydown",function(e){if(e.key==="Escape"&&document.body.classList.contains("sidebar-open"))closeSidebar();});
-  // 侧边栏导航（事件委托）
   $("sidebarNav").addEventListener("click",function(e){
     var btn=e.target.closest("button");if(!btn)return;
     if(btn.hasAttribute("data-nav-toggle")){toggleNavExpand(btn.getAttribute("data-nav-toggle"));}
     else if(btn.hasAttribute("data-nav-page")){switchPanel(btn.getAttribute("data-nav-page"));}
-    else if(btn.hasAttribute("data-nav-action")){
-      var act=btn.getAttribute("data-nav-action");
-      if(act==="logout")handleLogout();
-    }
+    else if(btn.hasAttribute("data-nav-action")){var act=btn.getAttribute("data-nav-action");if(act==="logout")handleLogout();}
   });
-  // 全局按钮（事件委托）
   document.addEventListener("click",function(e){
     var btn=e.target.closest("button");if(!btn)return;
     var act=btn.getAttribute("data-act"),id=btn.getAttribute("data-id");if(!act)return;
@@ -820,31 +771,34 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
     else if(act==="canceledit")toggleEdit(id);
     else if(act==="rencat"){var cat=S.categories.find(function(c){return c.id===id;});if(!cat)return;var nn=prompt("重命名分类",cat.name);if(nn&&nn.trim()){cat.name=nn.trim();saveData().then(function(){renderAll();});}}
     else if(act==="delcat")deleteCategory(id);
+    else if(act==="switchtheme")switchTheme(id);
+    else if(act==="deltheme")deleteCustomTheme(id);
   });
-  // 设置
   var sni=$("siteNameInput");
   if(sni){sni.onblur=function(){if(!canEdit())return;var n=this.value.trim();if(n&&n!==S.siteName){S.siteName=n;updTitle();saveData();}};sni.onkeypress=function(e){if(e.key==="Enter")this.blur();};}
-  $("themeLight").onclick=function(){setTheme("light");};
-  $("themeDark").onclick=function(){setTheme("dark");};
-  $("themeAuto").onclick=function(){setTheme("auto");};
+  $("themeLight").onclick=function(){setBaseTheme("light");};
+  $("themeDark").onclick=function(){setBaseTheme("dark");};
+  $("themeAuto").onclick=function(){setBaseTheme("auto");};
   $("addCatBtn").onclick=addCategory;
   $("newCatInput").onkeypress=function(e){if(e.key==="Enter")addCategory();};
   $("exportBtn").onclick=exportData;
   $("importBtn").onclick=function(){$("importFile").click();};
   $("importFile").onchange=importData;
+  $("importThemeBtn").onclick=function(){$("importThemeFile").click();};
+  $("importThemeFile").onchange=importThemeFile;
+  $("exportThemeBtn").onclick=exportCurrentTheme;
   $("toastBtn").onclick=function(){if(S.undoCb){S.undoCb();S.undoCb=null;$("toast").classList.remove("show");}};
   $("changePwdBtn").onclick=handleChangePassword;
   $("confirmPwdInput").onkeypress=function(e){if(e.key==="Enter")handleChangePassword();};
-  // 搜索
   $("quickSearch").oninput=function(){handleQuickSearch(this.value);};
   $("searchInput").oninput=function(){handleSearch(this.value);};
 
   /* ================================================================
-   *  初始化：先检查认证状态，再加载页面
+   *  初始化
    * ================================================================ */
   var sp=localStorage.getItem("active_panel");
   if(sp)S.activePanel=sp;
-  applyTheme();
+  applyThemeStyle();
   checkAuthStatus();
 })();
 </script>
