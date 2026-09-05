@@ -312,9 +312,6 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
 (function(){
   "use strict";
 
-  /* ================================================================
-   *  导航配置（adminOnly: true 的项对访客隐藏）
-   * ================================================================ */
   var NAV_CONFIG=[
     {id:"tools",label:"工具",icon:"🧰",type:"section",defaultExpanded:true,children:[
       {id:"url-storage",label:"网址储存",icon:"🔗",type:"group",defaultExpanded:true,children:[
@@ -337,9 +334,7 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
   var ADMIN_PANELS=["panel-categories","panel-settings","panel-password"];
   var S={siteName:"网址储存",settings:{theme:"auto"},categories:[{id:"default",name:"常用"}],links:[],curCat:"all",searchQ:"",fileSha:null,busy:false,undoCb:null,saveRetrying:false,activePanel:"panel-links",authMode:"loading",authToken:null};
 
-  /* ================================================================
-   *  内置风格定义
-   * ================================================================ */
+  /* ====== 内置风格 ====== */
   var BUILTIN_THEMES=[
     {id:"light",name:"亮色",type:"builtin",vars:null,preview:{bg:"#fff",accent:"#0071e3"}},
     {id:"dark",name:"暗色",type:"builtin",vars:null,preview:{bg:"#000",accent:"#0a84ff"}},
@@ -359,8 +354,7 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
   function setCurrentThemeId(id){localStorage.setItem("current_theme",id);}
   function applyThemeStyle(){
     var themeId=getCurrentThemeId();
-    var allThemes=getAllThemes();
-    var theme=allThemes.find(function(t){return t.id===themeId;});
+    var theme=getAllThemes().find(function(t){return t.id===themeId;});
     var old=document.getElementById("custom-theme-style");
     if(old)old.remove();
     if(!theme||theme.id==="light"){document.documentElement.setAttribute("data-theme","light");}
@@ -444,9 +438,7 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
     grid.innerHTML=h;
   }
 
-  /* ================================================================
-   *  工具函数
-   * ================================================================ */
+  /* ====== 工具函数 ====== */
   function $(id){return document.getElementById(id);}
   function gid(){return Date.now().toString(36)+Math.random().toString(36).substr(2,5);}
   function getDomain(u){try{return new URL(u).hostname.replace(/^www\./,"");}catch(e){return u;}}
@@ -464,9 +456,7 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
   function b64Decode(b64){var bin=atob(b64.replace(/\n/g,""));var bytes=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);return new TextDecoder().decode(bytes);}
   function showToast(msg,btnText,cb){var t=$("toast"),b=$("toastBtn");$("toastMsg").textContent=msg;if(btnText&&cb){b.style.display="inline";b.textContent=btnText;S.undoCb=cb;}else{b.style.display="none";S.undoCb=null;}t.classList.add("show");setTimeout(function(){t.classList.remove("show");S.undoCb=null;},cb?4000:2000);}
 
-  /* ================================================================
-   *  认证系统
-   * ================================================================ */
+  /* ====== 认证系统 ====== */
   function checkAuthStatus(){
     fetch(AUTH_API+"/auth/status")
       .then(function(r){return r.json();})
@@ -559,9 +549,7 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
       .catch(function(){msg.textContent="网络错误";msg.style.display="block";btn.textContent="确认修改";btn.disabled=false;});
   }
 
-  /* ================================================================
-   *  GitHub API
-   * ================================================================ */
+  /* ====== GitHub API ====== */
   function ghReq(m,p,b){
     var opts={method:m,headers:{Accept:"application/vnd.github.v3+json"}};
     if(b)opts.body=JSON.stringify(b);
@@ -611,15 +599,11 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
       });
   }
 
-  /* ================================================================
-   *  主题 & 标题
-   * ================================================================ */
+  /* ====== 主题 & 标题 ====== */
   function setBaseTheme(t){setCurrentThemeId(t);applyThemeStyle();renderThemes();}
   function updTitle(){$("siteTitle").textContent=S.siteName;document.title=S.siteName;var i=$("siteNameInput");if(i)i.value=S.siteName;}
 
-  /* ================================================================
-   *  侧边栏 & 导航渲染
-   * ================================================================ */
+  /* ====== 侧边栏 & 导航 ====== */
   function renderNav(){
     var nav=$("sidebarNav");var h='<div class="nav-label">导航菜单</div>';
     NAV_CONFIG.forEach(function(section){
@@ -661,9 +645,7 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
   function closeSidebar(){document.body.classList.remove("sidebar-open");}
   function toggleSidebar(){document.body.classList.toggle("sidebar-open");}
 
-  /* ================================================================
-   *  面板切换
-   * ================================================================ */
+  /* ====== 面板切换 ====== */
   function switchPanel(id){
     if(ADMIN_PANELS.indexOf(id)!==-1&&!canEdit())return;
     S.activePanel=id;
@@ -673,9 +655,7 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
     if(window.innerWidth<=768)closeSidebar();
   }
 
-  /* ================================================================
-   *  渲染
-   * ================================================================ */
+  /* ====== 渲染 ====== */
   function renderAll(){renderNav();renderCatTabs();renderLinks();renderCatList();renderSettings();renderThemes();}
   function renderCatTabs(){
     var c=$("catTabs");
@@ -724,9 +704,7 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
   }
   function renderSettings(){var i=$("siteNameInput");if(i)i.value=S.siteName;applyThemeStyle();}
 
-  /* ================================================================
-   *  链接/分类操作
-   * ================================================================ */
+  /* ====== 链接/分类操作 ====== */
   function addLink(){if(!canEdit())return;if(S.busy)return;var inp=$("urlInput"),sel=$("addCatSel");if(!inp)return;var ru=inp.value.trim();if(!ru)return;var u=ru;if(!/^https?:\/\//.test(u))u="https://"+u;var cid=sel?sel.value:"default";localStorage.setItem("lastAddCat",cid);S.busy=true;var btn=$("addBtn");if(btn){btn.disabled=true;btn.textContent="获取中...";}showStatus("正在获取标题...");fetchTitle(u).then(function(t){hideStatus();S.links.unshift({id:gid(),url:u,title:t||u,categoryId:cid,note:"",pinned:false,added:new Date().toISOString()});if(btn)btn.textContent="保存中...";return saveData().then(function(){renderAll();inp.value="";if(btn){btn.textContent="添加";btn.disabled=false;}S.busy=false;});}).catch(function(){hideStatus();if(btn){btn.textContent="添加";btn.disabled=false;}S.busy=false;});}
   function fetchTitle(u){return fetch("https://corsproxy.io/?url="+encodeURIComponent(u)).then(function(r){return r.text();}).then(function(h){var m=h.match(/<title[^>]*>([^<]*)<\/title>/i);return m?m[1].trim():"";}).catch(function(){return"";});}
   function toggleEdit(id){var p=$("edit-"+id);if(!p)return;if(p.classList.contains("active"))p.classList.remove("active");else{document.querySelectorAll(".edit-panel.active").forEach(function(x){x.classList.remove("active");});p.classList.add("active");}}
@@ -740,9 +718,7 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
   function handleQuickSearch(v){S.searchQ=v.trim().toLowerCase();renderLinks();}
   function handleSearch(v){var c=$("searchResults"),q=v.trim().toLowerCase();if(!q){c.innerHTML='<div class="empty-state">输入关键词开始搜索</div>';return;}var r=S.links.filter(function(l){return(l.title||"").toLowerCase().indexOf(q)!==-1||(l.url||"").toLowerCase().indexOf(q)!==-1||(l.note||"").toLowerCase().indexOf(q)!==-1;});if(r.length===0){c.innerHTML='<div class="empty-state">没有找到匹配的网址</div>';return;}var h='<ul class="link-list">';r.forEach(function(l){h+=renderCard(l);});h+='</ul>';c.innerHTML=h;}
 
-  /* ================================================================
-   *  事件监听
-   * ================================================================ */
+  /* ====== 事件监听 ====== */
   $("guestCard").onclick=handleGuestLogin;
   $("adminCard").onclick=showLoginForm;
   $("loginSubmitBtn").onclick=handleAdminLogin;
@@ -759,9 +735,10 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
     else if(btn.hasAttribute("data-nav-page")){switchPanel(btn.getAttribute("data-nav-page"));}
     else if(btn.hasAttribute("data-nav-action")){var act=btn.getAttribute("data-nav-action");if(act==="logout")handleLogout();}
   });
+  // 【修复】全局点击委托：用 [data-act] 替代 button，使 div 风格卡片也能点击
   document.addEventListener("click",function(e){
-    var btn=e.target.closest("button");if(!btn)return;
-    var act=btn.getAttribute("data-act"),id=btn.getAttribute("data-id");if(!act)return;
+    var el=e.target.closest("[data-act]");if(!el)return;
+    var act=el.getAttribute("data-act"),id=el.getAttribute("data-id");if(!act)return;
     if(act==="selcat"){S.curCat=id;localStorage.setItem("lastCat",id);renderCatTabs();renderLinks();}
     else if(act==="newcat"){switchPanel("panel-categories");$("newCatInput").focus();}
     else if(act==="pin")togglePin(id);
@@ -793,9 +770,7 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
   $("quickSearch").oninput=function(){handleQuickSearch(this.value);};
   $("searchInput").oninput=function(){handleSearch(this.value);};
 
-  /* ================================================================
-   *  初始化
-   * ================================================================ */
+  /* ====== 初始化 ====== */
   var sp=localStorage.getItem("active_panel");
   if(sp)S.activePanel=sp;
   applyThemeStyle();
