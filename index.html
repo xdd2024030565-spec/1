@@ -435,8 +435,20 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
   }
   function showAuthPage(p){$("loginPage").classList.toggle("hidden",p!=="login");$("setupPage").classList.toggle("hidden",p!=="setup");$("topbar").style.display="none";$("mainContent").style.display="none";closeSidebar();if(p==="login"){$("loginForm").style.display="none";$("loginError").textContent="";$("loginPassword").value="";$("adminCard").classList.remove("selected");$("guestCard").classList.remove("selected");}}
   function enterGuestMode(){try{safeLS('setItem','guestMode','1');}catch(e){} S.authMode="guest";S.authToken=null;enterMainInterface();}
-  function enterMainInterface(){$("loginPage").classList.add("hidden");$("setupPage").classList.add("hidden");$("topbar").style.display="flex";$("mainContent").style.display="block";var b=$("authBadge");if(b)b.style.display=(S.authMode==="guest")?"inline":"none";applyThemeStyle();loadData();}
-  function handleGuestLogin(){enterGuestMode();}
+  function enterMainInterface(){
+    console.log('进入主界面');
+    try {
+      $("loginPage").classList.add("hidden");
+      $("setupPage").classList.add("hidden");
+      $("topbar").style.display="flex";
+      $("mainContent").style.display="block";
+      var b=$("authBadge");
+      if(b) b.style.display=(S.authMode==="guest")?"inline":"none";
+    } catch(e) { console.error('显示主界面失败', e); }
+    try { applyThemeStyle(); } catch(e) { console.error('应用主题失败', e); }
+    try { loadData(); } catch(e) { console.error('加载数据失败', e); }
+  }
+  function handleGuestLogin(){console.log('点击访客登录');enterGuestMode();}
   function showLoginForm(){$("guestCard").classList.remove("selected");$("adminCard").classList.add("selected");$("loginForm").style.display="flex";$("loginPassword").focus();}
   function handleAdminLogin(){
     var p=$("loginPassword").value;if(!p)return;
