@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>阅读器</title>
+<style>
+:root{
+  --bg:#f5f5f7; --bg2:#fff; --fg:#1a1a1a; --fg2:#86868b; --border:#d2d2d7;
+  --accent:#0071e3; --accent-bg:rgba(0,113,227,.08); --danger:#ff3b30;
+  --card:#fff; --radius:12px; --ease:cubic-bezier(.2,.8,.2,1);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--fg);line-height:1.6;font-size:16px;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body.theme-dark{--bg:#000;--bg2:#1c1c1e;--fg:#f5f5f7;--fg2:#86868b;--border:#38383a;--accent:#0a84ff;--accent-bg:rgba(10,132,255,.15);--card:#1c1c1e}
+body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:#d5c4a1;--accent:#9a6b1f;--accent-bg:rgba(154,107,31,.08);--card:#faf3e6}
+.topbar{position:fixed;top:0;left:0;right:0;height:56px;background:var(--card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;z-index:10}
+.topbar-title{font-size:1.2rem;font-weight:600;margin-left:12px}
+.topbar-btn{background:none;border:none;color:var(--accent);font-size:1rem;cursor:pointer;padding:8px;border-radius:8px}
+.main{max-width:800px;margin:0 auto;padding:72px 16px 40px}
+.doc-list{list-style:none}
+.doc-item{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;cursor:pointer;border:1px solid var(--border);transition:border-color .2s}
+.doc-item:hover{border-color:var(--accent)}
+.doc-icon{font-size:1.5rem}
+.doc-info{flex:1;min-width:0}
+.doc-title{font-weight:600;word-break:break-word;margin-bottom:4px}
+.doc-meta{font-size:.8rem;color:var(--fg2);display:flex;gap:12px}
+.doc-progress{font-size:.8rem;color:var(--accent)}
+.doc-actions{display:flex;gap:4px}
+.doc-actions button{border:none;background:transparent;color:var(--fg2);font-size:.85rem;padding:6px 10px;border-radius:8px;cursor:pointer}
+.doc-actions button:hover{color:var(--danger);background:rgba(255,59,48,.1)}
+.import-area{border:2px dashed var(--border);border-radius:var(--radius);padding:30px;text-align:center;margin-bottom:20px;background:var(--card)}
+.import-area input{display:none}
+.import-label{display:inline-block;padding:12px 24px;background:var(--accent);color:#fff;border-radius:10px;font-weight:600;cursor:pointer}
+.reader-mode{position:fixed;inset:0;background:var(--bg);z-index:20;display:flex;flex-direction:column}
+.reader-topbar{height:56px;display:flex;align-items:center;padding:0 8px;border-bottom:1px solid var(--border);background:var(--card)}
+.reader-title{flex:1;text-align:center;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 8px}
+.reader-content{flex:1;overflow-y:auto;padding:20px 16px;white-space:pre-wrap;word-break:break-word;font-size:1rem;line-height:1.8}
+.reader-settings{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);padding:8px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;z-index:21}
+.setting-group{display:flex;gap:8px;align-items:center}
+.setting-btn{border:1px solid var(--border);background:var(--bg2);color:var(--fg);padding:6px 12px;border-radius:8px;font-size:.85rem;cursor:pointer}
+.setting-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.font-size-input{width:60px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:4px;background:var(--bg2);color:var(--fg)}
+.empty-state{text-align:center;color:var(--fg2);padding:40px 0}
+.loading{text-align:center;color:var(--fg2);padding:20px}
+</style>
+</head>
+<body class="theme-light">
+
+<div id="libraryPage">
+  <div class="topbar">
+    <span style="font-size:1.5rem">📚</span>
+    <span class="topbar-title">我的书库</span>
+  </div>
+  <div class="main">
+    <div class="import-area">
+      <label class="import-label" for="fileInput">导入 TXT 文件</label>
+      <input type="file" id="fileInput" accept=".txt,text/plain" multiple>
+    </div>
+    <div id="docListContainer"></div>
+  </div>
+</div>
+
+<div id="readerPage" class="reader-mode" style="display:none;">
+  <div class="reader-topbar">
+    <button class="topbar-btn" id="backBtn">← 返回</button>
+    <span class="reader-title" id="readerTitle"></span>
+    <button class="topbar-btn" id="deleteDocBtn">🗑️</button>
+  </div>
+  <div class="reader-content" id="readerContent"></div>
+  <div class="reader-settings">
+    <div class="setting-group">
+      <button class="setting-btn" id="fontMinus">A-</button>
+      <input type="number" class="font-size-input" id="fontSizeInput" value="16" min="12" max="28">
+      <button class="setting-btn" id="fontPlus">A+</button>
+    </div>
+    <div class="setting-group">
+      <button class="setting-btn" id="themeLight">☀️</button>
+      <button class="setting-btn" id="themeDark">🌙</button>
+      <button class="setting-btn" id="themeSepia">📜</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ====== 配置：请替换为你的 Worker 地址 ======
+  const API_BASE = 'https://your-worker.workers.dev';
+
+  let currentDocId = null;
+  let currentFontSize = 16;
+  let currentLineHeight = 1.8;
+  let currentTheme = 'light';
+
+  // ---------- API 调用封装 ----------
+  async function apiRequest(method, path, body) {
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    if (body) opts.body = JSON.stringify(body);
+    const res = await fetch(API_BASE + path, opts);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error || res.statusText);
+    }
+    if (res.status === 204) return null;
+    return res.json();
+  }
+
+  // 获取文档列表
+  async function fetchDocList() {
+    return await apiRequest('GET', '/reader/list');
+  }
+
+  // 获取文档详情（包括内容）
+  async function fetchDoc(id) {
+    return await apiRequest('GET', `/reader/get?id=${encodeURIComponent(id)}`);
+  }
+
+  // 导入新文档
+  async function importDoc(title, content) {
+    return await apiRequest('POST', '/reader/import', { title, content });
+  }
+
+  // 更新阅读进度
+  async function updateProgress(id, progress) {
+    return await apiRequest('POST', '/reader/progress', { id, progress });
+  }
+
+  // 删除文档
+  async function deleteDoc(id) {
+    return await apiRequest('DELETE', `/reader/delete?id=${encodeURIComponent(id)}`);
+  }
+
+  // ---------- 渲染文档列表 ----------
+  async function renderLibrary() {
+    const container = document.getElementById('docListContainer');
+    container.innerHTML = '<div class="loading">加载中...</div>';
+    try {
+      const docs = await fetchDocList();
+      if (!docs || docs.length === 0) {
+        container.innerHTML = '<div class="empty-state">还没有文档，点击上方导入 TXT 文件</div>';
+        return;
+      }
+      docs.sort((a, b) => (b.lastReadAt || 0) - (a.lastReadAt || 0));
+      let html = '<ul class="doc-list">';
+      docs.forEach(doc => {
+        const progress = doc.progress ? Math.round(doc.progress * 100) + '%' : '未读';
+        const date = doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : '';
+        html += `
+          <li class="doc-item" data-id="${doc.id}">
+            <div class="doc-icon">📄</div>
+            <div class="doc-info">
+              <div class="doc-title">${escapeHtml(doc.title)}</div>
+              <div class="doc-meta">
+                <span>${date}</span>
+                <span class="doc-progress">${progress}</span>
+              </div>
+            </div>
+            <div class="doc-actions">
+              <button class="del-btn" data-id="${doc.id}">删除</button>
+            </div>
+          </li>
+        `;
+      });
+      html += '</ul>';
+      container.innerHTML = html;
+
+      document.querySelectorAll('.doc-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+          if (e.target.classList.contains('del-btn')) return;
+          openReader(item.dataset.id);
+        });
+      });
+      document.querySelectorAll('.del-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const id = btn.dataset.id;
+          if (confirm('确定删除这篇文档吗？')) {
+            try {
+              await deleteDoc(id);
+              renderLibrary();
+            } catch (err) {
+              alert('删除失败：' + err.message);
+            }
+          }
+        });
+      });
+    } catch (err) {
+      container.innerHTML = `<div class="empty-state">加载失败：${escapeHtml(err.message)}</div>`;
+    }
+  }
+
+  // ---------- 导入文件 ----------
+  document.getElementById('fileInput').addEventListener('change', async (e) => {
+    const files = e.target.files;
+    if (!files.length) return;
+    for (const file of files) {
+      const content = await readFileAsText(file);
+      const title = file.name.replace(/\.txt$/i, '') || '未命名文档';
+      try {
+        await importDoc(title, content);
+      } catch (err) {
+        alert(`导入 ${file.name} 失败：${err.message}`);
+        continue;
+      }
+    }
+    e.target.value = '';
+    renderLibrary();
+  });
+
+  function readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsText(file);
+    });
+  }
+
+  // ---------- 打开阅读器 ----------
+  async function openReader(id) {
+    currentDocId = id;
+    try {
+      const doc = await fetchDoc(id);
+      document.getElementById('readerTitle').textContent = doc.title;
+      document.getElementById('readerContent').textContent = doc.content;
+      const contentEl = document.getElementById('readerContent');
+      if (doc.progress) {
+        contentEl.scrollTop = doc.progress * contentEl.scrollHeight;
+      }
+      document.getElementById('libraryPage').style.display = 'none';
+      document.getElementById('readerPage').style.display = 'flex';
+      applyReaderSettings();
+    } catch (err) {
+      alert('打开文档失败：' + err.message);
+    }
+  }
+
+  function closeReader() {
+    if (currentDocId) {
+      const contentEl = document.getElementById('readerContent');
+      const progress = contentEl.scrollHeight > 0 ? contentEl.scrollTop / contentEl.scrollHeight : 0;
+      updateProgress(currentDocId, progress).catch(() => {});
+    }
+    document.getElementById('readerPage').style.display = 'none';
+    document.getElementById('libraryPage').style.display = 'block';
+    currentDocId = null;
+    renderLibrary();
+  }
+
+  // ---------- 阅读器设置 ----------
+  function applyReaderSettings() {
+    const contentEl = document.getElementById('readerContent');
+    contentEl.style.fontSize = currentFontSize + 'px';
+    contentEl.style.lineHeight = currentLineHeight;
+    document.body.className = 'theme-' + currentTheme;
+  }
+
+  document.getElementById('backBtn').addEventListener('click', closeReader);
+  document.getElementById('deleteDocBtn').addEventListener('click', async () => {
+    if (!currentDocId) return;
+    if (confirm('确定删除当前文档？')) {
+      try {
+        await deleteDoc(currentDocId);
+        document.getElementById('readerPage').style.display = 'none';
+        document.getElementById('libraryPage').style.display = 'block';
+        currentDocId = null;
+        renderLibrary();
+      } catch (err) {
+        alert('删除失败：' + err.message);
+      }
+    }
+  });
+
+  document.getElementById('fontMinus').addEventListener('click', () => {
+    currentFontSize = Math.max(12, currentFontSize - 1);
+    document.getElementById('fontSizeInput').value = currentFontSize;
+    applyReaderSettings();
+  });
+  document.getElementById('fontPlus').addEventListener('click', () => {
+    currentFontSize = Math.min(28, currentFontSize + 1);
+    document.getElementById('fontSizeInput').value = currentFontSize;
+    applyReaderSettings();
+  });
+  document.getElementById('fontSizeInput').addEventListener('change', (e) => {
+    currentFontSize = parseInt(e.target.value) || 16;
+    if (currentFontSize < 12) currentFontSize = 12;
+    if (currentFontSize > 28) currentFontSize = 28;
+    e.target.value = currentFontSize;
+    applyReaderSettings();
+  });
+  document.getElementById('themeLight').addEventListener('click', () => { currentTheme = 'light'; applyReaderSettings(); });
+  document.getElementById('themeDark').addEventListener('click', () => { currentTheme = 'dark'; applyReaderSettings(); });
+  document.getElementById('themeSepia').addEventListener('click', () => { currentTheme = 'sepia'; applyReaderSettings(); });
+
+  // 离开页面时保存进度
+  window.addEventListener('beforeunload', () => {
+    if (currentDocId) {
+      const contentEl = document.getElementById('readerContent');
+      const progress = contentEl.scrollHeight > 0 ? contentEl.scrollTop / contentEl.scrollHeight : 0;
+      // 使用 sendBeacon 或 fetch keepalive 尝试保存
+      if (navigator.sendBeacon) {
+        const data = new Blob([JSON.stringify({ id: currentDocId, progress })], { type: 'application/json' });
+        navigator.sendBeacon(API_BASE + '/reader/progress', data);
+      } else {
+        fetch(API_BASE + '/reader/progress', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: currentDocId, progress }),
+          keepalive: true
+        }).catch(() => {});
+      }
+    }
+  });
+
+  // ---------- 工具函数 ----------
+  function escapeHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  // ---------- 初始化 ----------
+  renderLibrary();
+})();
+</script>
+</body>
+</html>
