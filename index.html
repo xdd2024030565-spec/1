@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>网址储存</title>
+<script src="https://cdn.jsdelivr.net/npm/vconsole@latest/dist/vconsole.min.js"></script>
+<script>var vConsole = new VConsole();</script>
 <style>
 :root{--bg:#fff;--bg2:#f5f5f7;--fg:#1a1a1a;--fg2:#86868b;--border:#d2d2d7;--accent:#0071e3;--accent-bg:rgba(0,113,227,.08);--danger:#ff3b30;--card:#f5f5f7;--sidebar-bg:rgba(245,245,247,.98);--topbar-bg:rgba(255,255,255,.92);--radius:12px;--maxw:720px;--sidebar-w:280px;--ease:cubic-bezier(.2,.8,.2,1)}
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#000;--bg2:#1c1c1e;--fg:#f5f5f7;--fg2:#86868b;--border:#38383a;--accent:#0a84ff;--accent-bg:rgba(10,132,255,.15);--danger:#ff453a;--card:#1c1c1e;--sidebar-bg:rgba(28,28,30,.98);--topbar-bg:rgba(0,0,0,.92)}}
@@ -323,6 +325,26 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
     return false;
   };
 
+  // 安全存储，防止隐私模式或禁用 localStorage 导致脚本中断
+  function safeLS(method, key, value) {
+    try {
+      if (value !== undefined) return localStorage[method](key, value);
+      return localStorage[method](key);
+    } catch(e) {
+      console.error('localStorage 访问失败:', e);
+      return null;
+    }
+  }
+  function safeSS(method, key, value) {
+    try {
+      if (value !== undefined) return sessionStorage[method](key, value);
+      return sessionStorage[method](key);
+    } catch(e) {
+      console.error('sessionStorage 访问失败:', e);
+      return null;
+    }
+  }
+
   var NAV_CONFIG=[
     {id:"tools",label:"工具",icon:"🧰",type:"section",defaultExpanded:true,children:[
       {id:"url-storage",label:"网址储存",icon:"🔗",type:"group",defaultExpanded:true,children:[
@@ -361,11 +383,11 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
     {id:"slate",name:"石板灰",type:"builtin",vars:{"--bg":"#f0f0f2","--bg2":"#e0e0e4","--fg":"#1a1a2e","--fg2":"#5a5a6e","--border":"#c0c0c8","--accent":"#4a4a6e","--accent-bg":"rgba(74,74,110,.1)","--danger":"#e03030","--card":"#e0e0e4","--sidebar-bg":"rgba(240,240,242,.98)","--topbar-bg":"rgba(255,255,255,.92)"},preview:{bg:"#f0f0f2",accent:"#4a4a6e"}}
   ];
 
-  function getCustomThemes(){try{return JSON.parse(localStorage.getItem("custom_themes")||"[]");}catch(e){return[];}}
-  function saveCustomThemes(t){localStorage.setItem("custom_themes",JSON.stringify(t));}
+  function getCustomThemes(){try{return JSON.parse(safeLS('getItem','custom_themes')||"[]");}catch(e){return[];}}
+  function saveCustomThemes(t){safeLS('setItem','custom_themes',JSON.stringify(t));}
   function getAllThemes(){return BUILTIN_THEMES.concat(getCustomThemes());}
-  function getCurrentThemeId(){return localStorage.getItem("current_theme")||(S.settings.theme||"auto");}
-  function setCurrentThemeId(id){localStorage.setItem("current_theme",id);}
+  function getCurrentThemeId(){return safeLS('getItem','current_theme')||(S.settings.theme||"auto");}
+  function setCurrentThemeId(id){safeLS('setItem','current_theme',id);}
   function applyThemeStyle(){var themeId=getCurrentThemeId();var theme=getAllThemes().find(function(t){return t.id===themeId;});var old=document.getElementById("custom-theme-style");if(old)old.remove();if(!theme||theme.id==="light"){document.documentElement.setAttribute("data-theme","light");}else if(theme.id==="dark"){document.documentElement.setAttribute("data-theme","dark");}else if(theme.id==="auto"){document.documentElement.setAttribute("data-theme","auto");}else if(theme.vars){document.documentElement.setAttribute("data-theme","light");var css=":root{";for(var k in theme.vars)css+=k+":"+theme.vars[k]+";";css+="}";var s=document.createElement("style");s.id="custom-theme-style";s.textContent=css;document.head.appendChild(s);}["Light","Dark","Auto"].forEach(function(n){var b=$("theme"+n);if(b)b.classList.remove("active");});var bm={light:"Light",dark:"Dark",auto:"Auto"};var btn=$("theme"+bm[themeId]);if(btn)btn.classList.add("active");}
   function switchTheme(id){setCurrentThemeId(id);applyThemeStyle();renderThemes();}
   function parseCSSVars(t){var v={};var rr=/:root\s*\{([^}]*)\}/g;var rm;while(rm=rr.exec(t)){var vr=/(--[a-zA-Z0-9_-]+)\s*:\s*([^;]+)\s*;?/g;var m;while(m=vr.exec(rm[1]))v[m[1]]=m[2].trim();}return v;}
@@ -395,24 +417,24 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
     fetch(AUTH_API+"/auth/status").then(function(r){return r.json();}).then(function(d){
       if(d.setupNeeded){showAuthPage("setup");}
       else{
-        var t=sessionStorage.getItem("authToken");
+        var t=safeSS('getItem','authToken');
         if(t){verifyToken(t);}
-        else if(localStorage.getItem("guestMode")==="1"){enterGuestMode();}
+        else if(safeLS('getItem','guestMode')==="1"){enterGuestMode();}
         else{showAuthPage("login");}
       }
-    }).catch(function(){showAuthPage("login");});
+    }).catch(function(e){console.error('auth status failed', e); showAuthPage("login");});
   }
   function verifyToken(t){
     fetch(AUTH_API+"/auth/verify",{method:"POST",headers:{"Authorization":"Bearer "+t}})
       .then(function(r){return r.json();})
       .then(function(d){
         if(d.valid){S.authToken=t;S.authMode="admin";enterMainInterface();}
-        else{sessionStorage.removeItem("authToken");showAuthPage("login");}
+        else{safeSS('removeItem','authToken');showAuthPage("login");}
       })
-      .catch(function(){sessionStorage.removeItem("authToken");showAuthPage("login");});
+      .catch(function(){safeSS('removeItem','authToken');showAuthPage("login");});
   }
   function showAuthPage(p){$("loginPage").classList.toggle("hidden",p!=="login");$("setupPage").classList.toggle("hidden",p!=="setup");$("topbar").style.display="none";$("mainContent").style.display="none";closeSidebar();if(p==="login"){$("loginForm").style.display="none";$("loginError").textContent="";$("loginPassword").value="";$("adminCard").classList.remove("selected");$("guestCard").classList.remove("selected");}}
-  function enterGuestMode(){S.authMode="guest";S.authToken=null;localStorage.setItem("guestMode","1");enterMainInterface();}
+  function enterGuestMode(){try{safeLS('setItem','guestMode','1');}catch(e){} S.authMode="guest";S.authToken=null;enterMainInterface();}
   function enterMainInterface(){$("loginPage").classList.add("hidden");$("setupPage").classList.add("hidden");$("topbar").style.display="flex";$("mainContent").style.display="block";var b=$("authBadge");if(b)b.style.display=(S.authMode==="guest")?"inline":"none";applyThemeStyle();loadData();}
   function handleGuestLogin(){enterGuestMode();}
   function showLoginForm(){$("guestCard").classList.remove("selected");$("adminCard").classList.add("selected");$("loginForm").style.display="flex";$("loginPassword").focus();}
@@ -422,11 +444,11 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
     fetch(AUTH_API+"/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:p})})
       .then(function(r){return r.json();})
       .then(function(d){
-        if(d.token){sessionStorage.setItem("authToken",d.token);localStorage.removeItem("guestMode");S.authToken=d.token;S.authMode="admin";enterMainInterface();}
+        if(d.token){safeSS('setItem','authToken',d.token);safeLS('removeItem','guestMode');S.authToken=d.token;S.authMode="admin";enterMainInterface();}
         else if(d.setupNeeded){showAuthPage("setup");}
         else{$("loginError").textContent=d.error||"登录失败";var lf=$("loginForm");lf.classList.add("shake");setTimeout(function(){lf.classList.remove("shake");},400);b.textContent="进入";b.disabled=false;}
       })
-      .catch(function(){$("loginError").textContent="网络错误";b.textContent="进入";b.disabled=false;});
+      .catch(function(e){console.error(e);$("loginError").textContent="网络错误";b.textContent="进入";b.disabled=false;});
   }
   function handleSetup(){
     var p=$("setupPassword").value,c=$("setupConfirm").value;
@@ -436,12 +458,12 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
     fetch(AUTH_API+"/auth/setup",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:p})})
       .then(function(r){return r.json();})
       .then(function(d){
-        if(d.token){sessionStorage.setItem("authToken",d.token);S.authToken=d.token;S.authMode="admin";enterMainInterface();}
+        if(d.token){safeSS('setItem','authToken',d.token);S.authToken=d.token;S.authMode="admin";enterMainInterface();}
         else{$("setupError").textContent=d.error||"设置失败";b.textContent="设置并进入";b.disabled=false;}
       })
       .catch(function(){$("setupError").textContent="网络错误";b.textContent="设置并进入";b.disabled=false;});
   }
-  function handleLogout(){sessionStorage.removeItem("authToken");localStorage.removeItem("guestMode");S.authToken=null;S.authMode="loading";S.links=[];S.categories=[{id:"default",name:"常用"}];S.settings={theme:"auto"};showAuthPage("login");}
+  function handleLogout(){safeSS('removeItem','authToken');safeLS('removeItem','guestMode');S.authToken=null;S.authMode="loading";S.links=[];S.categories=[{id:"default",name:"常用"}];S.settings={theme:"auto"};showAuthPage("login");}
   function handleChangePassword(){
     var c=$("curPwdInput").value,n=$("newPwdInput").value,cp=$("confirmPwdInput").value;
     var m=$("pwdMsg");
@@ -452,7 +474,7 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
     fetch(AUTH_API+"/auth/change-password",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+S.authToken},body:JSON.stringify({currentPassword:c,newPassword:n})})
       .then(function(r){return r.json();})
       .then(function(d){
-        if(d.token){sessionStorage.setItem("authToken",d.token);S.authToken=d.token;m.textContent="✅ 密码修改成功";m.style.display="block";$("curPwdInput").value="";$("newPwdInput").value="";$("confirmPwdInput").value="";}
+        if(d.token){safeSS('setItem','authToken',d.token);S.authToken=d.token;m.textContent="✅ 密码修改成功";m.style.display="block";$("curPwdInput").value="";$("newPwdInput").value="";$("confirmPwdInput").value="";}
         else{m.textContent=d.error||"修改失败";m.style.display="block";}
         b.textContent="确认修改";b.disabled=false;
       })
@@ -486,7 +508,7 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
             S.links=p.links||[];
           }
         }
-        S.curCat=localStorage.getItem("lastCat")||"all";
+        S.curCat=safeLS('getItem','lastCat')||"all";
         if(!S.categories.length)S.categories=[{id:"default",name:"常用"}];
         hideStatus();
         applyThemeStyle();
@@ -547,7 +569,7 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
     nav.innerHTML=h;
   }
   function renderNavLeaf(l,l2){var c='nav-leaf';if(l2)c+=' nav-leaf-l2';if(l.type==="action")return'<button class="'+c+'" data-nav-action="'+l.action+'"><span class="nav-icon">'+l.icon+'</span><span>'+esc(l.label)+'</span></button>';if(S.activePanel===l.id)c+=' active';return'<button class="'+c+'" data-nav-page="'+l.id+'"><span class="nav-icon">'+l.icon+'</span><span>'+esc(l.label)+'</span></button>';}
-  function isNavExpanded(i){var v=localStorage.getItem("nav-expand-"+i.id);if(v===null)return i.defaultExpanded?true:false;return v==="1";}
+  function isNavExpanded(i){var v=safeLS('getItem','nav-expand-'+i.id);if(v===null)return i.defaultExpanded?true:false;return v==="1";}
   function toggleNavExpand(id){
     var b=document.querySelector('[data-nav-toggle="'+id+'"]');
     if(!b)return;
@@ -565,7 +587,7 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
       t.addEventListener("transitionend",h);
       setTimeout(h,300);
     }
-    localStorage.setItem("nav-expand-"+id,w?"0":"1");
+    safeLS('setItem','nav-expand-'+id,w?"0":"1");
   }
   function openSidebar(){document.body.classList.add("sidebar-open");}
   function closeSidebar(){document.body.classList.remove("sidebar-open");}
@@ -576,7 +598,7 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
     S.activePanel=id;
     document.querySelectorAll(".panel").forEach(function(p){p.classList.toggle("active",p.id===id);});
     document.querySelectorAll(".nav-leaf").forEach(function(b){b.classList.toggle("active",b.getAttribute("data-nav-page")===id);});
-    localStorage.setItem("active_panel",id);
+    safeLS('setItem','active_panel',id);
     var mc=$("mainContent");
     if(id==="panel-engine")mc.classList.add("wide");else mc.classList.remove("wide");
     if(window.innerWidth<=768)closeSidebar();
@@ -625,7 +647,7 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
       }
     }
     if(canEdit()){
-      var last=localStorage.getItem("lastAddCat")||"default";
+      var last=safeLS('getItem','lastAddCat')||"default";
       h+='<div class="add-form" style="margin-top:24px;"><input type="text" id="urlInput" placeholder="粘贴网址，自动获取标题..." autocomplete="off"><select id="addCatSel">';
       S.categories.forEach(function(c2){h+='<option value="'+c2.id+'"'+(c2.id===last?" selected":"")+'>'+esc(c2.name)+'</option>';});
       h+='</select><button id="addBtn">添加</button></div>';
@@ -670,7 +692,7 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
     var u=ru;
     if(!/^https?:\/\//.test(u))u="https://"+u;
     var cid=sel?sel.value:"default";
-    localStorage.setItem("lastAddCat",cid);
+    safeLS('setItem','lastAddCat',cid);
     S.busy=true;
     var btn=$("addBtn");
     if(btn){btn.disabled=true;btn.textContent="获取中...";}
@@ -827,6 +849,7 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
   function engineOpen(){if(engineHistIdx>=0&&engineHistory[engineHistIdx])window.open(engineHistory[engineHistIdx],"_blank");}
 
   function init(){
+    console.log('初始化开始');
     // 绑定事件
     $("guestCard").onclick=handleGuestLogin;
     $("adminCard").onclick=showLoginForm;
@@ -847,7 +870,7 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
     document.addEventListener("click",function(e){
       var el=e.target.closest("[data-act]");if(!el)return;
       var act=el.getAttribute("data-act"),id=el.getAttribute("data-id"),durl=el.getAttribute("data-url");if(!act)return;
-      if(act==="selcat"){S.curCat=id;localStorage.setItem("lastCat",id);renderCatTabs();renderLinks();}
+      if(act==="selcat"){S.curCat=id;safeLS('setItem','lastCat',id);renderCatTabs();renderLinks();}
       else if(act==="newcat"){switchPanel("panel-categories");$("newCatInput").focus();}
       else if(act==="pin")togglePin(id);
       else if(act==="edit")toggleEdit(id);
@@ -883,9 +906,10 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
     $("engineBackBtn").onclick=engineBack;
     $("engineOpenBtn").onclick=engineOpen;
 
-    var sp=localStorage.getItem("active_panel");if(sp)S.activePanel=sp;
+    var sp=safeLS('getItem','active_panel');if(sp)S.activePanel=sp;
     applyThemeStyle();
     checkAuthStatus();
+    console.log('初始化完成');
   }
 
   if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",init);}
