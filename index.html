@@ -65,6 +65,8 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
 .nav-leaf.active{color:var(--accent);font-weight:600;border-left-color:var(--accent);background:var(--accent-bg)}
 .nav-leaf .nav-icon{font-size:.85rem;width:16px;text-align:center}
 .nav-leaf.nav-leaf-l2{padding-left:40px;font-size:.92rem;color:var(--fg)}
+/* 使链接类型的导航项继承样式 */
+.nav-leaf[href] { text-decoration: none; color: inherit; }
 .main-content{max-width:var(--maxw);margin:0 auto;padding:72px 16px 40px}
 .main-content.wide{max-width:1200px}
 .panel{display:none}.panel.active{display:block}
@@ -327,7 +329,7 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
     catch(e) { console.error('sessionStorage 访问失败:', e); return null; }
   }
 
-  // ====== 导航配置（包含搜索引擎分组）======
+  // ====== 导航配置（包含搜索引擎分组和阅读器链接）======
   var NAV_CONFIG=[
     {id:"tools",label:"工具",icon:"🧰",type:"section",defaultExpanded:true,children:[
       {id:"url-storage",label:"网址储存",icon:"🔗",type:"group",defaultExpanded:true,children:[
@@ -337,7 +339,10 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
       ]},
       {id:"search-engine",label:"搜索引擎",icon:"🌐",type:"group",defaultExpanded:false,children:[
         {id:"panel-engine",label:"全网搜索",icon:"🔎",type:"page"}
-      ]}
+      ]},
+      // ▼ 新增阅读器链接
+      {id:"reader-link",label:"阅读器",icon:"📚",type:"link",url:"reader.html"},
+      // ▲ 新增结束
     ]},
     {id:"settings-section",label:"设置",icon:"⚙️",type:"section",defaultExpanded:false,children:[
       {id:"panel-settings",label:"网站设置",icon:"🔧",type:"page",adminOnly:true},
@@ -649,6 +654,12 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
   }
   function renderNavLeaf(leaf,isL2){
     var cls='nav-leaf'; if(isL2) cls+=' nav-leaf-l2';
+
+    // 处理链接类型（跳转到外部页面，如阅读器）
+    if(leaf.type==="link"){
+      return '<a class="'+cls+'" href="'+leaf.url+'"><span class="nav-icon">'+leaf.icon+'</span><span>'+esc(leaf.label)+'</span></a>';
+    }
+
     if(leaf.type==="action") return '<button class="'+cls+'" data-nav-action="'+leaf.action+'"><span class="nav-icon">'+leaf.icon+'</span><span>'+esc(leaf.label)+'</span></button>';
     if(S.activePanel===leaf.id) cls+=' active';
     return '<button class="'+cls+'" data-nav-page="'+leaf.id+'"><span class="nav-icon">'+leaf.icon+'</span><span>'+esc(leaf.label)+'</span></button>';
