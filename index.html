@@ -140,7 +140,6 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
 .theme-del:hover{background:rgba(255,59,48,.08)}
 .theme-help{margin-top:16px;padding:14px;background:var(--card);border-radius:var(--radius);font-size:.82rem;color:var(--fg2);line-height:1.7}
 .theme-help code{display:block;margin:8px 0;padding:8px 12px;background:var(--bg);border-radius:8px;font-size:.78rem;overflow-x:auto;white-space:pre}
-/* 搜索引擎 */
 .se-panel{display:flex;flex-direction:column;height:calc(100vh - 160px)}
 .se-bar{display:flex;gap:8px;margin-bottom:16px}
 .se-bar input{flex:1;padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--bg2);color:var(--fg);font-size:1rem;font-family:inherit}
@@ -148,7 +147,7 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
 .se-bar button{padding:14px 24px;border:none;border-radius:12px;background:var(--accent);color:#fff;font-size:1rem;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit}
 .se-bar button:disabled{opacity:.5}
 .se-body{display:flex;gap:16px;flex:1;min-height:0}
-.se-results{width:300px;flex-shrink:0;overflow-y:auto;padding-right:4px}
+.se-results{width:300px;flex-shrink:0;overflow-y:auto;padding-right:4px;position:relative}
 .se-item{padding:12px;border-radius:var(--radius);cursor:pointer;transition:background .15s;margin-bottom:8px;background:var(--card)}
 .se-item:hover{background:var(--accent-bg)}
 .se-item.active{background:var(--accent-bg);outline:2px solid var(--accent)}
@@ -365,8 +364,8 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
   function applyThemeStyle(){var themeId=getCurrentThemeId();var theme=getAllThemes().find(function(t){return t.id===themeId;});var old=document.getElementById("custom-theme-style");if(old)old.remove();if(!theme||theme.id==="light"){document.documentElement.setAttribute("data-theme","light");}else if(theme.id==="dark"){document.documentElement.setAttribute("data-theme","dark");}else if(theme.id==="auto"){document.documentElement.setAttribute("data-theme","auto");}else if(theme.vars){document.documentElement.setAttribute("data-theme","light");var css=":root{";for(var k in theme.vars)css+=k+":"+theme.vars[k]+";";css+="}";var s=document.createElement("style");s.id="custom-theme-style";s.textContent=css;document.head.appendChild(s);}["Light","Dark","Auto"].forEach(function(n){var b=$("theme"+n);if(b)b.classList.remove("active");});var bm={light:"Light",dark:"Dark",auto:"Auto"};var btn=$("theme"+bm[themeId]);if(btn)btn.classList.add("active");}
   function switchTheme(id){setCurrentThemeId(id);applyThemeStyle();renderThemes();}
   function parseCSSVars(t){var v={};var rr=/:root\s*\{([^}]*)\}/g;var rm;while(rm=rr.exec(t)){var vr=/(-{2}[a-zA-Z0-9_-]+)\s*:\s*([^;]+)\s*;?/g;var m;while(m=vr.exec(rm[1]))v[m[1]]=m[2].trim();}return v;}
-  function importThemeFile(ev){var f=ev.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(e){var vars=parseCSSVars(e.target.result);if(Object.keys(vars).length===0){showToast("未找到CSS变量",null,null);return;}var name=f.name.replace(/\.css$/i,"");var th=getCustomThemes();th.push({id:"custom-"+Date.now(),name:name,type:"custom",vars:vars,preview:{bg:vars["--bg"]||"#fff",accent:vars["--accent"]||"#0071e3"}});saveCustomThemes(th);renderThemes();showToast("风格「"+name+"」导入成功",null,null);};r.readAsText(f);ev.target.value="";}
-  function exportCurrentTheme(){var t=getAllThemes().find(function(x){return x.id===getCurrentThemeId();});if(!t||!t.vars){showToast("请先选择一个可导出的风格",null,null);return;}var css="/* "+t.name+" */\n:root {\n";for(var k in t.vars)css+="  "+k+": "+t.vars[k]+";\n";css+="}\n";var b=new Blob([css],{type:"text/css"});var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=t.name+".css";a.click();URL.revokeObjectURL(a.href);}
+  function importThemeFile(ev){var f=ev.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(e){var vars=parseCSSVars(e.target.result);if(Object.keys(vars).length===0){showToast("未找到CSS变量",null,null);return;}var name=f.name.replace(/\.css$/i,"");var th=getCustomThemes();th.push({id:"custom-"+Date.now(),name:name,type:"custom",vars:vars,preview:{bg:vars["--bg"]||"#fff",accent:vars["--accent"]||"#0071e3"}});saveCustomThemes(th);renderThemes();showToast("风格导入成功",null,null);};r.readAsText(f);ev.target.value="";}
+  function exportCurrentTheme(){var t=getAllThemes().find(function(x){return x.id===getCurrentThemeId();});if(!t||!t.vars){showToast("请先选择可导出的风格",null,null);return;}var css="/* "+t.name+" */\n:root {\n";for(var k in t.vars)css+="  "+k+": "+t.vars[k]+";\n";css+="}\n";var b=new Blob([css],{type:"text/css"});var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=t.name+".css";a.click();URL.revokeObjectURL(a.href);}
   function deleteCustomTheme(id){saveCustomThemes(getCustomThemes().filter(function(t){return t.id!==id;}));if(getCurrentThemeId()===id){setCurrentThemeId("auto");applyThemeStyle();}renderThemes();}
   function renderThemes(){var g=$("themeGrid");if(!g)return;var c=getCurrentThemeId();var all=getAllThemes();var h="";all.forEach(function(t){var a=t.id===c;var p=t.preview||{bg:"#fff",accent:"#0071e3"};h+='<div class="theme-card'+(a?' active':'')+'" data-act="switchtheme" data-id="'+t.id+'"><div class="theme-preview" style="background:'+p.bg+'"><div class="theme-swatch theme-swatch-bg" style="background:'+p.bg+'"></div><div class="theme-swatch theme-swatch-accent" style="background:'+p.accent+'"></div></div><div class="theme-name">'+esc(t.name)+'</div>'+(t.type==="custom"?'<button class="theme-del" data-act="deltheme" data-id="'+t.id+'">删除</button>':'')+'</div>';});g.innerHTML=h;}
 
@@ -437,21 +436,20 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
   function handleQuickSearch(v){S.searchQ=v.trim().toLowerCase();renderLinks();}
   function handleSearch(v){var c=$("searchResults"),q=v.trim().toLowerCase();if(!q){c.innerHTML='<div class="empty-state">输入关键词开始搜索</div>';return;}var r=S.links.filter(function(l){return(l.title||"").toLowerCase().indexOf(q)!==-1||(l.url||"").toLowerCase().indexOf(q)!==-1||(l.note||"").toLowerCase().indexOf(q)!==-1;});if(r.length===0){c.innerHTML='<div class="empty-state">没有找到匹配的网址</div>';return;}var h='<ul class="link-list">';r.forEach(function(l){h+=renderCard(l);});h+='</ul>';c.innerHTML=h;}
 
-  /* ====== 搜索引擎 ====== */
   function doEngineSearch(){
     var q=$("engineInput").value.trim();if(!q)return;
     var btn=$("engineBtn");btn.textContent="搜索中...";btn.disabled=true;
     $("engineResults").innerHTML='<div class="se-empty">搜索中...</div>';
     fetch(AUTH_API+"/search?q="+encodeURIComponent(q))
       .then(function(r){return r.json();})
-      .then(function(d){btn.textContent="🔍 搜索";btn.disabled=false;if(d.error){$("engineResults").innerHTML='<div class="se-empty">搜索失败: '+esc(d.error)+'</div>';return;}renderEngineResults(d.results||[]);})
+      .then(function(d){btn.textContent="🔍 搜索";btn.disabled=false;if(d.error){$("engineResults").innerHTML='<div class="se-empty">搜索失败</div>';return;}renderEngineResults(d.results||[]);})
       .catch(function(){btn.textContent="🔍 搜索";btn.disabled=false;$("engineResults").innerHTML='<div class="se-empty">网络错误</div>';});
   }
   function renderEngineResults(results){
     var c=$("engineResults");
     if(results.length===0){c.innerHTML='<div class="se-empty">没有找到结果</div>';return;}
     var h="";
-    results.forEach(function(r,i){
+    results.forEach(function(r){
       h+='<div class="se-item" data-act="browsesite" data-url="'+esc(r.url)+'">';
       h+='<div class="se-item-title">'+esc(r.title)+'</div>';
       h+='<div class="se-item-url">'+esc(r.displayUrl||getDomain(r.url))+'</div>';
@@ -469,10 +467,18 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
     updateEngineFrame();
   }
   function updateEngineFrame(){
-    if(engineHistIdx<0||!engineHistory[engineHistIdx]){$("engineFrameWrap").innerHTML='<div class="se-empty">选择搜索结果预览网页</div>';$("engineUrlDisplay").textContent="未加载";$("engineBackBtn").disabled=true;return;}
+    var wrap=$("engineFrameWrap");
+    if(engineHistIdx<0||!engineHistory[engineHistIdx]){wrap.innerHTML='<div class="se-empty">选择搜索结果预览网页</div>';$("engineUrlDisplay").textContent="未加载";$("engineBackBtn").disabled=true;return;}
     var url=engineHistory[engineHistIdx];
     var browseUrl=AUTH_API+"/browse?url="+encodeURIComponent(url);
-    $("engineFrameWrap").innerHTML='<div class="se-loading">加载中...</div><iframe src="'+esc(browseUrl)+'" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox" style="opacity:0;transition:opacity .3s" onload="this.previousElementSibling.style.display=\'none\';this.style.opacity=1"></iframe>';
+    wrap.innerHTML='<div class="se-loading">加载中...</div>';
+    var frame=document.createElement("iframe");
+    frame.src=browseUrl;
+    frame.sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox";
+    frame.style.opacity="0";
+    frame.style.transition="opacity .3s";
+    frame.onload=function(){var ld=wrap.querySelector(".se-loading");if(ld)ld.style.display="none";frame.style.opacity="1";};
+    wrap.appendChild(frame);
     $("engineUrlDisplay").textContent=url;
     $("engineBackBtn").disabled=engineHistIdx<=0;
   }
