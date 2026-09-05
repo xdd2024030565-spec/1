@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>阅读器</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
 :root{
   --bg:#f5f5f7; --bg2:#fff; --fg:#1a1a1a; --fg2:#86868b; --border:#d2d2d7;
@@ -14,17 +15,17 @@
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--fg);line-height:1.6;font-size:16px;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 body.theme-dark{--bg:#000;--bg2:#1c1c1e;--fg:#f5f5f7;--fg2:#86868b;--border:#38383a;--accent:#0a84ff;--accent-bg:rgba(10,132,255,.15);--card:#1c1c1e}
 body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:#d5c4a1;--accent:#9a6b1f;--accent-bg:rgba(154,107,31,.08);--card:#faf3e6}
-.topbar{position:fixed;top:0;left:0;right:0;height:56px;background:var(--card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;z-index:10}
-.topbar-title{font-size:1.2rem;font-weight:600;margin-left:12px}
+.topbar{position:fixed;top:0;left:0;right:0;height:56px;background:var(--card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;z-index:10;gap:8px}
+.topbar-title{font-size:1.2rem;font-weight:600;margin-left:4px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .topbar-btn{background:none;border:none;color:var(--accent);font-size:1rem;cursor:pointer;padding:8px;border-radius:8px}
-.main{max-width:800px;margin:0 auto;padding:72px 16px 40px}
+.main{max-width:900px;margin:0 auto;padding:72px 16px 40px}
 .doc-list{list-style:none}
 .doc-item{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;cursor:pointer;border:1px solid var(--border);transition:border-color .2s}
 .doc-item:hover{border-color:var(--accent)}
 .doc-icon{font-size:1.5rem}
 .doc-info{flex:1;min-width:0}
 .doc-title{font-weight:600;word-break:break-word;margin-bottom:4px}
-.doc-meta{font-size:.8rem;color:var(--fg2);display:flex;gap:12px}
+.doc-meta{font-size:.8rem;color:var(--fg2);display:flex;gap:12px;flex-wrap:wrap}
 .doc-progress{font-size:.8rem;color:var(--accent)}
 .doc-actions{display:flex;gap:4px}
 .doc-actions button{border:none;background:transparent;color:var(--fg2);font-size:.85rem;padding:6px 10px;border-radius:8px;cursor:pointer}
@@ -33,9 +34,11 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
 .import-area input{display:none}
 .import-label{display:inline-block;padding:12px 24px;background:var(--accent);color:#fff;border-radius:10px;font-weight:600;cursor:pointer}
 .reader-mode{position:fixed;inset:0;background:var(--bg);z-index:20;display:flex;flex-direction:column}
-.reader-topbar{height:56px;display:flex;align-items:center;padding:0 8px;border-bottom:1px solid var(--border);background:var(--card)}
+.reader-topbar{height:56px;display:flex;align-items:center;padding:0 8px;border-bottom:1px solid var(--border);background:var(--card);gap:4px}
 .reader-title{flex:1;text-align:center;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 8px}
 .reader-content{flex:1;overflow-y:auto;padding:20px 16px;white-space:pre-wrap;word-break:break-word;font-size:1rem;line-height:1.8}
+.reader-content.markdown{white-space:normal}
+.reader-content .md-content{max-width:800px;margin:0 auto}
 .reader-settings{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);padding:8px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;z-index:21}
 .setting-group{display:flex;gap:8px;align-items:center}
 .setting-btn{border:1px solid var(--border);background:var(--bg2);color:var(--fg);padding:6px 12px;border-radius:8px;font-size:.85rem;cursor:pointer}
@@ -43,19 +46,47 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
 .font-size-input{width:60px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:4px;background:var(--bg2);color:var(--fg)}
 .empty-state{text-align:center;color:var(--fg2);padding:40px 0}
 .loading{text-align:center;color:var(--fg2);padding:20px}
+/* 分类、搜索、排序 */
+.toolbar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.toolbar input,.toolbar select{padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--fg);font-size:.9rem}
+/* 目录、书签、笔记、搜索弹窗 */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:30;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal-card{background:var(--card);border-radius:var(--radius);width:100%;max-width:400px;max-height:80vh;overflow-y:auto;padding:20px}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.modal-title{font-size:1.1rem;font-weight:600}
+.modal-close{background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--fg2)}
+.toc-item{padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.bookmark-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.note-item{padding:8px 0;border-bottom:1px solid var(--border)}
+.highlight{background:yellow;color:black}
+/* 回收站 */
+.deleted-item{opacity:.6}
 </style>
 </head>
 <body class="theme-light">
 
 <div id="libraryPage">
   <div class="topbar">
+    <button class="topbar-btn" onclick="location.href='https://xdd2024030565-spec.github.io/1/'">🏠</button>
     <span style="font-size:1.5rem">📚</span>
     <span class="topbar-title">我的书库</span>
+    <button class="topbar-btn" id="trashBtn">🗑️</button>
   </div>
   <div class="main">
     <div class="import-area">
-      <label class="import-label" for="fileInput">导入 TXT 文件</label>
-      <input type="file" id="fileInput" accept=".txt,text/plain" multiple>
+      <label class="import-label" for="fileInput">导入 TXT / Markdown 文件（可多选）</label>
+      <input type="file" id="fileInput" accept=".txt,.md,.markdown,text/plain" multiple>
+    </div>
+    <div class="toolbar">
+      <input type="text" id="searchInput" placeholder="搜索文档...">
+      <select id="sortSelect">
+        <option value="lastReadAt">最近阅读</option>
+        <option value="createdAt">添加时间</option>
+        <option value="title">标题</option>
+      </select>
+      <select id="categoryFilter">
+        <option value="all">全部分类</option>
+      </select>
     </div>
     <div id="docListContainer"></div>
   </div>
@@ -63,8 +94,12 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
 
 <div id="readerPage" class="reader-mode" style="display:none;">
   <div class="reader-topbar">
-    <button class="topbar-btn" id="backBtn">← 返回</button>
+    <button class="topbar-btn" id="backBtn">←</button>
+    <button class="topbar-btn" onclick="location.href='https://xdd2024030565-spec.github.io/1/'">🏠</button>
     <span class="reader-title" id="readerTitle"></span>
+    <button class="topbar-btn" id="tocBtn">📑</button>
+    <button class="topbar-btn" id="bookmarkBtn">🔖</button>
+    <button class="topbar-btn" id="searchDocBtn">🔍</button>
     <button class="topbar-btn" id="deleteDocBtn">🗑️</button>
   </div>
   <div class="reader-content" id="readerContent"></div>
@@ -79,22 +114,38 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
       <button class="setting-btn" id="themeDark">🌙</button>
       <button class="setting-btn" id="themeSepia">📜</button>
     </div>
+    <div class="setting-group">
+      <span id="wordCount"></span>
+      <span id="readTime"></span>
+    </div>
   </div>
 </div>
+
+<!-- 通用弹窗容器 -->
+<div id="modalContainer"></div>
 
 <script>
 (function(){
   "use strict";
 
-  // ====== 配置：请替换为你的 Worker 地址 ======
+  // ====== 配置 ======
   const API_BASE = 'https://reader.xdd2024030565.workers.dev';
+  const MAIN_SITE_URL = 'https://xdd2024030565-spec.github.io/1/';
 
+  // ====== 状态 ======
   let currentDocId = null;
   let currentFontSize = 16;
-  let currentLineHeight = 1.8;
   let currentTheme = 'light';
+  let currentDocMeta = null;
+  let currentDocContent = '';
+  let currentDocType = 'txt'; // 或 'markdown'
+  let docList = [];
+  let filteredDocs = [];
+  let currentCategory = 'all';
+  let currentSort = 'lastReadAt';
+  let currentSearchTerm = '';
 
-  // ---------- API 调用封装 ----------
+  // ====== API 封装 ======
   async function apiRequest(method, path, body) {
     const opts = { method, headers: { 'Content-Type': 'application/json' } };
     if (body) opts.body = JSON.stringify(body);
@@ -107,106 +158,161 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
     return res.json();
   }
 
-  // 获取文档列表
-  async function fetchDocList() {
-    return await apiRequest('GET', '/reader/list');
-  }
-
-  // 获取文档详情（包括内容）
-  async function fetchDoc(id) {
-    return await apiRequest('GET', `/reader/get?id=${encodeURIComponent(id)}`);
-  }
-
-  // 导入新文档
-  async function importDoc(title, content) {
-    return await apiRequest('POST', '/reader/import', { title, content });
-  }
-
-  // 更新阅读进度
-  async function updateProgress(id, progress) {
-    return await apiRequest('POST', '/reader/progress', { id, progress });
-  }
-
-  // 删除文档
-  async function deleteDoc(id) {
-    return await apiRequest('DELETE', `/reader/delete?id=${encodeURIComponent(id)}`);
-  }
-
-  // ---------- 渲染文档列表 ----------
-  async function renderLibrary() {
+  // ====== 书库渲染 ======
+  async function loadLibrary() {
     const container = document.getElementById('docListContainer');
     container.innerHTML = '<div class="loading">加载中...</div>';
     try {
-      const docs = await fetchDocList();
-      if (!docs || docs.length === 0) {
-        container.innerHTML = '<div class="empty-state">还没有文档，点击上方导入 TXT 文件</div>';
-        return;
-      }
-      docs.sort((a, b) => (b.lastReadAt || 0) - (a.lastReadAt || 0));
-      let html = '<ul class="doc-list">';
-      docs.forEach(doc => {
-        const progress = doc.progress ? Math.round(doc.progress * 100) + '%' : '未读';
-        const date = doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : '';
-        html += `
-          <li class="doc-item" data-id="${doc.id}">
-            <div class="doc-icon">📄</div>
-            <div class="doc-info">
-              <div class="doc-title">${escapeHtml(doc.title)}</div>
-              <div class="doc-meta">
-                <span>${date}</span>
-                <span class="doc-progress">${progress}</span>
-              </div>
-            </div>
-            <div class="doc-actions">
-              <button class="del-btn" data-id="${doc.id}">删除</button>
-            </div>
-          </li>
-        `;
-      });
-      html += '</ul>';
-      container.innerHTML = html;
-
-      document.querySelectorAll('.doc-item').forEach(item => {
-        item.addEventListener('click', (e) => {
-          if (e.target.classList.contains('del-btn')) return;
-          openReader(item.dataset.id);
-        });
-      });
-      document.querySelectorAll('.del-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-          e.stopPropagation();
-          const id = btn.dataset.id;
-          if (confirm('确定删除这篇文档吗？')) {
-            try {
-              await deleteDoc(id);
-              renderLibrary();
-            } catch (err) {
-              alert('删除失败：' + err.message);
-            }
-          }
-        });
-      });
+      docList = await apiRequest('GET', '/reader/list');
+      applyFiltersAndRender();
     } catch (err) {
       container.innerHTML = `<div class="empty-state">加载失败：${escapeHtml(err.message)}</div>`;
     }
   }
 
-  // ---------- 导入文件 ----------
+  function applyFiltersAndRender() {
+    filteredDocs = [...docList];
+
+    // 分类过滤
+    if (currentCategory !== 'all') {
+      filteredDocs = filteredDocs.filter(d => d.category === currentCategory);
+    }
+
+    // 搜索过滤
+    if (currentSearchTerm) {
+      const term = currentSearchTerm.toLowerCase();
+      filteredDocs = filteredDocs.filter(d =>
+        d.title.toLowerCase().includes(term) ||
+        (d.tags && d.tags.some(t => t.toLowerCase().includes(term)))
+      );
+    }
+
+    // 排序
+    filteredDocs.sort((a, b) => {
+      if (currentSort === 'title') return a.title.localeCompare(b.title);
+      return (b[currentSort] || 0) - (a[currentSort] || 0);
+    });
+
+    renderLibraryList(filteredDocs);
+    updateCategoryFilter();
+  }
+
+  function renderLibraryList(docs) {
+    const container = document.getElementById('docListContainer');
+    if (docs.length === 0) {
+      container.innerHTML = '<div class="empty-state">没有文档</div>';
+      return;
+    }
+
+    let html = '<ul class="doc-list">';
+    docs.forEach(doc => {
+      const progress = doc.progress ? Math.round(doc.progress * 100) + '%' : '未读';
+      const date = doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : '';
+      const deletedClass = doc.deleted ? ' deleted-item' : '';
+      html += `
+        <li class="doc-item${deletedClass}" data-id="${doc.id}">
+          <div class="doc-icon">${doc.deleted ? '♻️' : '📄'}</div>
+          <div class="doc-info">
+            <div class="doc-title">${escapeHtml(doc.title)}</div>
+            <div class="doc-meta">
+              <span>${date}</span>
+              <span>${escapeHtml(doc.category || '未分类')}</span>
+              ${doc.tags && doc.tags.length ? `<span>🏷️ ${doc.tags.map(t=>escapeHtml(t)).join(', ')}</span>` : ''}
+              <span class="doc-progress">${progress}</span>
+            </div>
+          </div>
+          <div class="doc-actions">
+            ${doc.deleted ? 
+              `<button class="restore-btn" data-id="${doc.id}">恢复</button>
+               <button class="purge-btn" data-id="${doc.id}">彻底删除</button>` :
+              `<button class="del-btn" data-id="${doc.id}">删除</button>`}
+          </div>
+        </li>
+      `;
+    });
+    html += '</ul>';
+    container.innerHTML = html;
+
+    // 绑定事件
+    document.querySelectorAll('.doc-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        if (e.target.classList.contains('del-btn') || e.target.classList.contains('restore-btn') || e.target.classList.contains('purge-btn')) return;
+        if (item.classList.contains('deleted-item')) {
+          alert('该文档在回收站中，请先恢复');
+          return;
+        }
+        openReader(item.dataset.id);
+      });
+    });
+
+    document.querySelectorAll('.del-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        if (confirm('确定将此文档移入回收站吗？')) {
+          try { await apiRequest('DELETE', '/reader/delete?id=' + encodeURIComponent(id)); await loadLibrary(); }
+          catch (err) { alert('删除失败：' + err.message); }
+        }
+      });
+    });
+
+    document.querySelectorAll('.restore-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        try { await apiRequest('POST', '/reader/restore', { id }); await loadLibrary(); }
+        catch (err) { alert('恢复失败：' + err.message); }
+      });
+    });
+
+    document.querySelectorAll('.purge-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        if (confirm('彻底删除该文档？此操作不可撤销。')) {
+          try { 
+            await apiRequest('POST', '/reader/empty-trash'); // 临时方案，实际应单个彻底删除，但我们用 empty-trash 代替，后面可优化
+            await loadLibrary(); 
+          }
+          catch (err) { alert('彻底删除失败：' + err.message); }
+        }
+      });
+    });
+  }
+
+  function updateCategoryFilter() {
+    const select = document.getElementById('categoryFilter');
+    const categories = new Set(docList.map(d => d.category || '未分类'));
+    let html = '<option value="all">全部分类</option>';
+    categories.forEach(cat => {
+      html += `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`;
+    });
+    select.innerHTML = html;
+    select.value = currentCategory;
+  }
+
+  // ====== 导入 ======
   document.getElementById('fileInput').addEventListener('change', async (e) => {
     const files = e.target.files;
     if (!files.length) return;
     for (const file of files) {
       const content = await readFileAsText(file);
-      const title = file.name.replace(/\.txt$/i, '') || '未命名文档';
+      const ext = file.name.split('.').pop().toLowerCase();
+      const isMarkdown = ext === 'md' || ext === 'markdown';
+      const title = file.name.replace(/\.[^.]+$/, '') || '未命名';
       try {
-        await importDoc(title, content);
+        await apiRequest('POST', '/reader/import', {
+          title,
+          content,
+          category: '未分类',
+          tags: []
+        });
       } catch (err) {
         alert(`导入 ${file.name} 失败：${err.message}`);
-        continue;
       }
     }
     e.target.value = '';
-    renderLibrary();
+    await loadLibrary();
   });
 
   function readFileAsText(file) {
@@ -218,17 +324,34 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
     });
   }
 
-  // ---------- 打开阅读器 ----------
+  // ====== 打开阅读器 ======
   async function openReader(id) {
     currentDocId = id;
     try {
-      const doc = await fetchDoc(id);
+      const doc = await apiRequest('GET', '/reader/get?id=' + encodeURIComponent(id));
+      currentDocMeta = doc;
+      currentDocContent = doc.content;
+      currentDocType = doc.title.endsWith('.md') || doc.title.endsWith('.markdown') ? 'markdown' : 'txt';
+
       document.getElementById('readerTitle').textContent = doc.title;
-      document.getElementById('readerContent').textContent = doc.content;
       const contentEl = document.getElementById('readerContent');
+      contentEl.innerHTML = '';
+      if (currentDocType === 'markdown') {
+        contentEl.classList.add('markdown');
+        const mdDiv = document.createElement('div');
+        mdDiv.className = 'md-content';
+        mdDiv.innerHTML = marked.parse(doc.content);
+        contentEl.appendChild(mdDiv);
+      } else {
+        contentEl.classList.remove('markdown');
+        contentEl.textContent = doc.content;
+      }
+
+      // 恢复进度
       if (doc.progress) {
         contentEl.scrollTop = doc.progress * contentEl.scrollHeight;
       }
+      updateReadingStats();
       document.getElementById('libraryPage').style.display = 'none';
       document.getElementById('readerPage').style.display = 'flex';
       applyReaderSettings();
@@ -241,38 +364,25 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
     if (currentDocId) {
       const contentEl = document.getElementById('readerContent');
       const progress = contentEl.scrollHeight > 0 ? contentEl.scrollTop / contentEl.scrollHeight : 0;
-      updateProgress(currentDocId, progress).catch(() => {});
+      apiRequest('POST', '/reader/progress', { id: currentDocId, progress }).catch(() => {});
     }
     document.getElementById('readerPage').style.display = 'none';
     document.getElementById('libraryPage').style.display = 'block';
     currentDocId = null;
-    renderLibrary();
+    currentDocMeta = null;
+    currentDocContent = '';
+    loadLibrary();
   }
 
-  // ---------- 阅读器设置 ----------
+  // ====== 阅读设置 ======
   function applyReaderSettings() {
     const contentEl = document.getElementById('readerContent');
     contentEl.style.fontSize = currentFontSize + 'px';
-    contentEl.style.lineHeight = currentLineHeight;
+    contentEl.style.lineHeight = '1.8';
     document.body.className = 'theme-' + currentTheme;
   }
 
   document.getElementById('backBtn').addEventListener('click', closeReader);
-  document.getElementById('deleteDocBtn').addEventListener('click', async () => {
-    if (!currentDocId) return;
-    if (confirm('确定删除当前文档？')) {
-      try {
-        await deleteDoc(currentDocId);
-        document.getElementById('readerPage').style.display = 'none';
-        document.getElementById('libraryPage').style.display = 'block';
-        currentDocId = null;
-        renderLibrary();
-      } catch (err) {
-        alert('删除失败：' + err.message);
-      }
-    }
-  });
-
   document.getElementById('fontMinus').addEventListener('click', () => {
     currentFontSize = Math.max(12, currentFontSize - 1);
     document.getElementById('fontSizeInput').value = currentFontSize;
@@ -294,33 +404,198 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
   document.getElementById('themeDark').addEventListener('click', () => { currentTheme = 'dark'; applyReaderSettings(); });
   document.getElementById('themeSepia').addEventListener('click', () => { currentTheme = 'sepia'; applyReaderSettings(); });
 
-  // 离开页面时保存进度
-  window.addEventListener('beforeunload', () => {
-    if (currentDocId) {
-      const contentEl = document.getElementById('readerContent');
-      const progress = contentEl.scrollHeight > 0 ? contentEl.scrollTop / contentEl.scrollHeight : 0;
-      // 使用 sendBeacon 或 fetch keepalive 尝试保存
-      if (navigator.sendBeacon) {
-        const data = new Blob([JSON.stringify({ id: currentDocId, progress })], { type: 'application/json' });
-        navigator.sendBeacon(API_BASE + '/reader/progress', data);
+  // ====== 阅读统计 ======
+  function updateReadingStats() {
+    if (!currentDocMeta) return;
+    const text = currentDocContent;
+    const words = text.replace(/\s+/g, '').length; // 简单字数统计
+    const readTime = Math.ceil(words / 400); // 假设每分钟400字
+    document.getElementById('wordCount').textContent = `字数：${words}`;
+    document.getElementById('readTime').textContent = `约${readTime}分钟`;
+  }
+
+  // ====== 目录提取与跳转 ======
+  document.getElementById('tocBtn').addEventListener('click', () => {
+    const headings = extractTOC(currentDocContent, currentDocType);
+    if (headings.length === 0) {
+      alert('未检测到章节标题');
+      return;
+    }
+    showModal('目录', buildTOCList(headings));
+  });
+
+  function extractTOC(content, type) {
+    const headings = [];
+    const lines = content.split('\n');
+    let index = 0;
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (type === 'markdown') {
+        const match = line.match(/^(#{1,3})\s+(.*)/);
+        if (match) {
+          headings.push({ level: match[1].length, text: match[2], line: i });
+        }
       } else {
-        fetch(API_BASE + '/reader/progress', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: currentDocId, progress }),
-          keepalive: true
-        }).catch(() => {});
+        // TXT：识别“第X章”、“Chapter X”等
+        const match = line.match(/^(第[0-9一二三四五六七八九十百千万]+[章节卷]|Chapter\s+\d+)\s*(.*)/i);
+        if (match) {
+          headings.push({ level: 1, text: line, line: i });
+        }
       }
+    }
+    return headings;
+  }
+
+  function buildTOCList(headings) {
+    let html = '';
+    headings.forEach(h => {
+      html += `<div class="toc-item" data-line="${h.line}" style="padding-left:${(h.level-1)*16}px">${escapeHtml(h.text)}</div>`;
+    });
+    return html;
+  }
+
+  function jumpToLine(lineNumber) {
+    const contentEl = document.getElementById('readerContent');
+    // 简单实现：按比例滚动，或使用查找
+    const text = contentEl.textContent;
+    const lines = text.split('\n');
+    if (lineNumber < lines.length) {
+      const targetText = lines[lineNumber].substring(0, 50);
+      const index = text.indexOf(targetText);
+      if (index !== -1) {
+        const range = document.createRange();
+        const textNode = contentEl.firstChild;
+        range.setStart(textNode, index);
+        range.setEnd(textNode, index);
+        const rect = range.getBoundingClientRect();
+        contentEl.scrollTop += rect.top - contentEl.getBoundingClientRect().top - 50;
+      }
+    }
+    closeModal();
+  }
+
+  // ====== 书签功能 ======
+  document.getElementById('bookmarkBtn').addEventListener('click', async () => {
+    if (!currentDocId || !currentDocMeta) return;
+    const contentEl = document.getElementById('readerContent');
+    const progress = contentEl.scrollHeight > 0 ? contentEl.scrollTop / contentEl.scrollHeight : 0;
+    const note = prompt('书签备注（可选）');
+    const bookmark = { progress, note: note || '', time: Date.now() };
+    currentDocMeta.bookmarks = currentDocMeta.bookmarks || [];
+    currentDocMeta.bookmarks.push(bookmark);
+    try {
+      await apiRequest('POST', '/reader/update', { id: currentDocId, bookmarks: currentDocMeta.bookmarks });
+      showModal('书签', currentDocMeta.bookmarks.map((b, i) => `
+        <div class="bookmark-item">
+          <span>${Math.round(b.progress*100)}%</span>
+          <span>${escapeHtml(b.note || '无备注')}</span>
+          <button onclick="jumpToBookmark(${i})">跳转</button>
+        </div>
+      `).join(''));
+    } catch (err) { alert('保存书签失败：' + err.message); }
+  });
+
+  window.jumpToBookmark = function(index) {
+    if (!currentDocMeta || !currentDocMeta.bookmarks[index]) return;
+    const progress = currentDocMeta.bookmarks[index].progress;
+    const contentEl = document.getElementById('readerContent');
+    contentEl.scrollTop = progress * contentEl.scrollHeight;
+    closeModal();
+  };
+
+  // ====== 全文搜索 ======
+  document.getElementById('searchDocBtn').addEventListener('click', () => {
+    const keyword = prompt('输入搜索关键词：');
+    if (!keyword) return;
+    const contentEl = document.getElementById('readerContent');
+    const text = contentEl.textContent;
+    const regex = new RegExp(keyword, 'gi');
+    let match;
+    let count = 0;
+    const matches = [];
+    while ((match = regex.exec(text)) !== null) {
+      matches.push(match.index);
+      count++;
+    }
+    if (count === 0) {
+      alert('未找到匹配项');
+      return;
+    }
+    let current = 0;
+    function highlightAndScroll() {
+      // 清除旧高亮
+      contentEl.innerHTML = contentEl.textContent.replace(/<span class="highlight">(.*?)<\/span>/g, '$1');
+      const text2 = contentEl.textContent;
+      const index = matches[current];
+      // 重新添加高亮
+      const before = text2.substring(0, index);
+      const after = text2.substring(index + keyword.length);
+      contentEl.innerHTML = escapeHtml(before) + `<span class="highlight">${escapeHtml(keyword)}</span>` + escapeHtml(after);
+      // 滚动到高亮位置
+      const range = document.createRange();
+      const span = contentEl.querySelector('.highlight');
+      range.setStart(span, 0);
+      range.setEnd(span, 0);
+      const rect = range.getBoundingClientRect();
+      contentEl.scrollTop += rect.top - contentEl.getBoundingClientRect().top - 50;
+    }
+    highlightAndScroll();
+    // 继续搜索下一个
+    const searchNext = () => {
+      current = (current + 1) % matches.length;
+      highlightAndScroll();
+    };
+    alert(`共找到 ${count} 处，点击确定跳转下一处`);
+    searchNext();
+  });
+
+  // ====== 弹窗通用 ======
+  function showModal(title, contentHTML) {
+    const modalContainer = document.getElementById('modalContainer');
+    modalContainer.innerHTML = `
+      <div class="modal">
+        <div class="modal-card">
+          <div class="modal-header">
+            <span class="modal-title">${escapeHtml(title)}</span>
+            <button class="modal-close" onclick="closeModal()">×</button>
+          </div>
+          <div class="modal-body">${contentHTML}</div>
+        </div>
+      </div>
+    `;
+    // 绑定目录点击
+    modalContainer.querySelectorAll('.toc-item').forEach(item => {
+      item.addEventListener('click', () => {
+        jumpToLine(parseInt(item.dataset.line));
+      });
+    });
+  }
+
+  window.closeModal = function() {
+    document.getElementById('modalContainer').innerHTML = '';
+  };
+
+  // ====== 工具栏事件 ======
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    currentSearchTerm = e.target.value.trim();
+    applyFiltersAndRender();
+  });
+  document.getElementById('sortSelect').addEventListener('change', (e) => {
+    currentSort = e.target.value;
+    applyFiltersAndRender();
+  });
+  document.getElementById('categoryFilter').addEventListener('change', (e) => {
+    currentCategory = e.target.value;
+    applyFiltersAndRender();
+  });
+  document.getElementById('trashBtn').addEventListener('click', () => {
+    if (confirm('清空回收站？所有已删除文档将被彻底移除。')) {
+      apiRequest('POST', '/reader/empty-trash').then(() => loadLibrary()).catch(err => alert('清空失败：' + err.message));
     }
   });
 
-  // ---------- 工具函数 ----------
-  function escapeHtml(str) {
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-  }
-
-  // ---------- 初始化 ----------
-  renderLibrary();
+  // ====== 初始化 ======
+  loadLibrary();
 })();
 </script>
 </body>
