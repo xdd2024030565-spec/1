@@ -1,7 +1,8 @@
 {
   "siteName": "网址储存",
   "settings": {
-    "theme": "light"
+    "theme": "light",
+    "fontSize": 22
   },
   "categories": [
     {
