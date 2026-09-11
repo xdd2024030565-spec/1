@@ -10,15 +10,61 @@
   --bg:#f5f5f7; --bg2:#fff; --fg:#1a1a1a; --fg2:#86868b; --border:#d2d2d7;
   --accent:#0071e3; --accent-bg:rgba(0,113,227,.08); --danger:#ff3b30;
   --card:#fff; --radius:12px; --ease:cubic-bezier(.2,.8,.2,1);
+  --success:#34c759; --warning:#ff9500; --info:#5ac8fa;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--fg);line-height:1.6;font-size:16px;-webkit-font-smoothing:antialiased;overflow-x:hidden}
-body.theme-dark{--bg:#000;--bg2:#1c1c1e;--fg:#f5f5f7;--fg2:#86868b;--border:#38383a;--accent:#0a84ff;--accent-bg:rgba(10,132,255,.15);--card:#1c1c1e}
-body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:#d5c4a1;--accent:#9a6b1f;--accent-bg:rgba(154,107,31,.08);--card:#faf3e6}
+body.theme-dark{--bg:#000;--bg2:#1c1c1e;--fg:#f5f5f7;--fg2:#86868b;--border:#38383a;--accent:#0a84ff;--accent-bg:rgba(10,132,255,.15);--card:#1c1c1e;--success:#30d158;--warning:#ff9f0a;--info:#64d2ff}
+body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:#d5c4a1;--accent:#9a6b1f;--accent-bg:rgba(154,107,31,.08);--card:#faf3e6;--success:#34c759;--warning:#ff9500;--info:#5ac8fa}
+
+/* ====== 全局顶部加载进度条 ====== */
+#globalLoader{position:fixed;top:0;left:0;height:3px;width:0;z-index:9999;background:linear-gradient(90deg,var(--accent),var(--info));border-radius:0 3px 3px 0;transition:width .3s var(--ease);box-shadow:0 0 8px var(--accent)}
+#globalLoader.loading{width:30vw;animation:loaderPulse 1.5s ease-in-out infinite}
+#globalLoader.complete{width:100vw;transition:width .4s var(--ease);opacity:0;transition:width .4s var(--ease),opacity .4s ease .2s}
+@keyframes loaderPulse{0%,100%{opacity:.5}50%{opacity:1}}
+
+/* ====== Toast 通知 ====== */
+#toastContainer{position:fixed;top:60px;right:12px;z-index:9998;display:flex;flex-direction:column;gap:8px;max-width:360px}
+.toast{display:flex;align-items:center;gap:8px;padding:12px 16px;border-radius:10px;background:var(--card);border:1px solid var(--border);box-shadow:0 4px 16px rgba(0,0,0,.12);font-size:.9rem;animation:toastIn .3s var(--ease);cursor:pointer;max-width:100%}
+.toast.removing{animation:toastOut .3s var(--ease) forwards}
+.toast-icon{font-size:1.1rem;flex-shrink:0}
+.toast-msg{flex:1;word-break:break-word}
+@keyframes toastIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes toastOut{to{transform:translateX(120%);opacity:0}}
+
+/* ====== 上传进度面板 ====== */
+.upload-panel{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);padding:12px 16px;z-index:50;display:none;flex-direction:column;gap:8px;max-height:40vh;overflow-y:auto}
+.upload-panel.active{display:flex;animation:slideUp .3s var(--ease)}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.upload-panel-header{display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:.9rem}
+.upload-panel-close{background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--fg2)}
+.upload-task{display:flex;flex-direction:column;gap:4px;padding:8px 0;border-bottom:1px solid var(--border)}
+.upload-task-info{display:flex;justify-content:space-between;font-size:.8rem;color:var(--fg2)}
+.upload-task-name{font-weight:500;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%}
+.upload-bar-wrap{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.upload-bar{height:100%;border-radius:3px;transition:width .2s ease;width:0;background:var(--accent)}
+.upload-bar.uploading{background:linear-gradient(90deg,var(--accent),var(--info))}
+.upload-bar.done{background:var(--success)}
+.upload-bar.error{background:var(--danger)}
+.upload-task-detail{font-size:.75rem;color:var(--fg2);display:flex;gap:8px}
+
+/* ====== 底部状态栏 ====== */
+#statusBar{position:fixed;bottom:0;left:0;right:0;height:28px;background:var(--card);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:.7rem;color:var(--fg2);z-index:15;gap:8px;overflow:hidden}
+.status-left,.status-right{display:flex;align-items:center;gap:10px;white-space:nowrap}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.status-dot.online{background:var(--success)}
+.status-dot.offline{background:var(--danger)}
+.status-dot.loading{background:var(--warning);animation:blink 1s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.status-item{display:flex;align-items:center;gap:4px}
+.status-divider{width:1px;height:12px;background:var(--border)}
+
+/* ====== 原有样式 ====== */
 .topbar{position:fixed;top:0;left:0;right:0;height:56px;background:var(--card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;z-index:10;gap:8px}
 .topbar-title{font-size:1.2rem;font-weight:600;margin-left:4px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .topbar-btn{background:none;border:none;color:var(--accent);font-size:1rem;cursor:pointer;padding:8px;border-radius:8px}
-.main{max-width:900px;margin:0 auto;padding:72px 16px 40px}
+.topbar-btn:active{background:var(--accent-bg)}
+.main{max-width:900px;margin:0 auto;padding:72px 16px 44px}
 .doc-list{list-style:none}
 .doc-item{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;cursor:pointer;border:1px solid var(--border);transition:border-color .2s}
 .doc-item:hover{border-color:var(--accent)}
@@ -30,26 +76,25 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
 .doc-actions{display:flex;gap:4px}
 .doc-actions button{border:none;background:transparent;color:var(--fg2);font-size:.85rem;padding:6px 10px;border-radius:8px;cursor:pointer}
 .doc-actions button:hover{color:var(--danger);background:rgba(255,59,48,.1)}
-.import-area{border:2px dashed var(--border);border-radius:var(--radius);padding:30px;text-align:center;margin-bottom:20px;background:var(--card)}
+.import-area{border:2px dashed var(--border);border-radius:var(--radius);padding:30px;text-align:center;margin-bottom:20px;background:var(--card);transition:border-color .2s,background .2s}
+.import-area.dragover{border-color:var(--accent);background:var(--accent-bg)}
 .import-area input{display:none}
 .import-label{display:inline-block;padding:12px 24px;background:var(--accent);color:#fff;border-radius:10px;font-weight:600;cursor:pointer}
 .reader-mode{position:fixed;inset:0;background:var(--bg);z-index:20;display:flex;flex-direction:column}
 .reader-topbar{height:56px;display:flex;align-items:center;padding:0 8px;border-bottom:1px solid var(--border);background:var(--card);gap:4px}
 .reader-title{flex:1;text-align:center;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 8px}
-.reader-content{flex:1;overflow-y:auto;padding:20px 16px;white-space:pre-wrap;word-break:break-word;font-size:1rem;line-height:1.8}
+.reader-content{flex:1;overflow-y:auto;padding:20px 16px 44px;white-space:pre-wrap;word-break:break-word;font-size:1rem;line-height:1.8}
 .reader-content.markdown{white-space:normal}
 .reader-content .md-content{max-width:800px;margin:0 auto}
-.reader-settings{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);padding:8px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;z-index:21}
+.reader-settings{position:fixed;bottom:28px;left:0;right:0;background:var(--card);border-top:1px solid var(--border);padding:8px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;z-index:21}
 .setting-group{display:flex;gap:8px;align-items:center}
 .setting-btn{border:1px solid var(--border);background:var(--bg2);color:var(--fg);padding:6px 12px;border-radius:8px;font-size:.85rem;cursor:pointer}
 .setting-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 .font-size-input{width:60px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:4px;background:var(--bg2);color:var(--fg)}
 .empty-state{text-align:center;color:var(--fg2);padding:40px 0}
 .loading{text-align:center;color:var(--fg2);padding:20px}
-/* 分类、搜索、排序 */
 .toolbar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
 .toolbar input,.toolbar select{padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--fg);font-size:.9rem}
-/* 目录、书签、笔记、搜索弹窗 */
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:30;display:flex;align-items:center;justify-content:center;padding:20px}
 .modal-card{background:var(--card);border-radius:var(--radius);width:100%;max-width:400px;max-height:80vh;overflow-y:auto;padding:20px}
 .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
@@ -59,11 +104,60 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
 .bookmark-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
 .note-item{padding:8px 0;border-bottom:1px solid var(--border)}
 .highlight{background:yellow;color:black}
-/* 回收站 */
 .deleted-item{opacity:.6}
+
+/* ====== 阅读进度浮动指示器 ====== */
+#readingProgressFloat{position:fixed;top:56px;right:8px;z-index:18;display:flex;flex-direction:column;align-items:flex-end;gap:4px;pointer-events:none}
+.progress-ring{width:40px;height:40px;position:relative}
+.progress-ring svg{transform:rotate(-90deg)}
+.progress-ring-bg{fill:none;stroke:var(--border);stroke-width:3}
+.progress-ring-fg{fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round;transition:stroke-dashoffset .3s var(--ease)}
+.progress-ring-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:.65rem;font-weight:700;color:var(--fg)}
+.progress-label{font-size:.7rem;color:var(--fg2);background:var(--card);padding:2px 8px;border-radius:8px;border:1px solid var(--border)}
+
+/* ====== 阅读信息浮窗 ====== */
+#readingInfoPanel{position:fixed;top:56px;left:8px;z-index:18;display:flex;flex-direction:column;gap:4px;pointer-events:none}
+.info-chip{font-size:.7rem;color:var(--fg2);background:var(--card);padding:3px 10px;border-radius:8px;border:1px solid var(--border);white-space:nowrap;display:flex;align-items:center;gap:4px}
+.info-chip .chip-icon{font-size:.75rem}
 </style>
 </head>
 <body class="theme-light">
+
+<!-- 全局加载进度条 -->
+<div id="globalLoader"></div>
+
+<!-- Toast 容器 -->
+<div id="toastContainer"></div>
+
+<!-- 上传进度面板 -->
+<div class="upload-panel" id="uploadPanel">
+  <div class="upload-panel-header">
+    <span>📤 上传进度</span>
+    <button class="upload-panel-close" onclick="document.getElementById('uploadPanel').classList.remove('active')">×</button>
+  </div>
+  <div id="uploadTasks"></div>
+</div>
+
+<!-- 阅读进度浮动指示器 -->
+<div id="readingProgressFloat" style="display:none;">
+  <div class="progress-ring">
+    <svg width="40" height="40" viewBox="0 0 40 40">
+      <circle class="progress-ring-bg" cx="20" cy="20" r="17"></circle>
+      <circle class="progress-ring-fg" cx="20" cy="20" r="17" stroke-dasharray="106.8" stroke-dashoffset="106.8" id="progressRingFg"></circle>
+    </svg>
+    <span class="progress-ring-text" id="progressRingText">0%</span>
+  </div>
+  <span class="progress-label" id="progressLabel">阅读进度</span>
+</div>
+
+<!-- 阅读信息浮窗 -->
+<div id="readingInfoPanel" style="display:none;">
+  <div class="info-chip"><span class="chip-icon">⏱️</span><span id="sessionTimer">0:00</span></div>
+  <div class="info-chip"><span class="chip-icon">📍</span><span id="positionInfo">0%</span></div>
+  <div class="info-chip"><span class="chip-icon">📖</span><span id="wordsReadInfo">0字</span></div>
+  <div class="info-chip"><span class="chip-icon">📝</span><span id="totalWordsInfo">0字</span></div>
+  <div class="info-chip"><span class="chip-icon">⏳</span><span id="remainTimeInfo">0分钟</span></div>
+</div>
 
 <div id="libraryPage">
   <div class="topbar">
@@ -73,8 +167,8 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
     <button class="topbar-btn" id="trashBtn">🗑️</button>
   </div>
   <div class="main">
-    <div class="import-area">
-      <label class="import-label" for="fileInput">导入 TXT / Markdown 文件（可多选）</label>
+    <div class="import-area" id="importArea">
+      <label class="import-label" for="fileInput">导入 TXT / Markdown 文件（可多选/可拖放）</label>
       <input type="file" id="fileInput" accept=".txt,.md,.markdown,text/plain" multiple>
     </div>
     <div class="toolbar">
@@ -124,6 +218,22 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
 <!-- 通用弹窗容器 -->
 <div id="modalContainer"></div>
 
+<!-- 底部状态栏 -->
+<div id="statusBar">
+  <div class="status-left">
+    <span class="status-item"><span class="status-dot online" id="netDot"></span><span id="netStatus">在线</span></span>
+    <span class="status-divider"></span>
+    <span class="status-item" id="docCountStatus">📚 0 篇</span>
+    <span class="status-divider"></span>
+    <span class="status-item" id="apiLatency">⚡ --ms</span>
+  </div>
+  <div class="status-right">
+    <span class="status-item" id="librarySizeStatus">💾 --</span>
+    <span class="status-divider"></span>
+    <span class="status-item" id="clockStatus">--:--</span>
+  </div>
+</div>
+
 <script>
 (function(){
   "use strict";
@@ -138,77 +248,225 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
   let currentTheme = 'light';
   let currentDocMeta = null;
   let currentDocContent = '';
-  let currentDocType = 'txt'; // 或 'markdown'
+  let currentDocType = 'txt';
   let docList = [];
   let filteredDocs = [];
   let currentCategory = 'all';
   let currentSort = 'lastReadAt';
   let currentSearchTerm = '';
+  let sessionStartTime = null;
+  let sessionTimerInterval = null;
+  let apiLatencyValue = null;
+  let activeUploads = 0;
+  let totalBytesSent = 0;
+  let totalBytesReceived = 0;
 
-  // ====== API 封装 ======
-  async function apiRequest(method, path, body) {
-    const opts = { method, headers: { 'Content-Type': 'application/json' } };
-    if (body) opts.body = JSON.stringify(body);
-    const res = await fetch(API_BASE + path, opts);
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error || res.statusText);
-    }
-    if (res.status === 204) return null;
-    return res.json();
+  // ====== 全局加载进度条 ======
+  const globalLoader = document.getElementById('globalLoader');
+  let loaderTimeout = null;
+
+  function showGlobalLoader(){
+    globalLoader.classList.remove('complete');
+    globalLoader.classList.add('loading');
+    clearTimeout(loaderTimeout);
   }
+  function hideGlobalLoader(){
+    globalLoader.classList.remove('loading');
+    globalLoader.classList.add('complete');
+    clearTimeout(loaderTimeout);
+    loaderTimeout = setTimeout(()=>{
+      globalLoader.classList.remove('complete');
+      globalLoader.style.width = '0';
+    }, 600);
+  }
+
+  // ====== Toast 通知系统 ======
+  const toastContainer = document.getElementById('toastContainer');
+  const toastIcons = { success:'✅', error:'❌', info:'ℹ️', warning:'⚠️' };
+
+  function showToast(message, type='info', duration=3500){
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `<span class="toast-icon">${toastIcons[type]||toastIcons.info}</span><span class="toast-msg">${escapeHtml(message)}</span>`;
+    toastContainer.appendChild(toast);
+    toast.addEventListener('click', ()=>removeToast(toast));
+    if(duration > 0){
+      setTimeout(()=>removeToast(toast), duration);
+    }
+    // 限制最多5条
+    while(toastContainer.children.length > 5){
+      removeToast(toastContainer.firstChild);
+    }
+  }
+  function removeToast(toast){
+    if(!toast || !toast.parentNode) return;
+    toast.classList.add('removing');
+    setTimeout(()=>{ if(toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
+  }
+
+  // ====== API 封装（带进度和延迟测量） ======
+  async function apiRequest(method, path, body, onProgress){
+    showGlobalLoader();
+    setNetStatus('loading');
+    const startTime = performance.now();
+
+    try{
+      let res;
+      if(onProgress && body){
+        // 使用 XMLHttpRequest 支持上传进度
+        res = await new Promise((resolve, reject)=>{
+          const xhr = new XMLHttpRequest();
+          xhr.open(method, API_BASE + path);
+          xhr.setRequestHeader('Content-Type', 'application/json');
+          xhr.upload.onprogress = (e)=>{
+            if(e.lengthComputable){
+              onProgress(e.loaded, e.total, e.timeStamp);
+              totalBytesSent += e.loaded;
+            }
+          };
+          xhr.onload = ()=>{
+            totalBytesReceived += parseInt(xhr.getResponseHeader('Content-Length')||0);
+            if(xhr.status >= 200 && xhr.status < 300){
+              if(xhr.status === 204) resolve(null);
+              else resolve(JSON.parse(xhr.responseText));
+            } else {
+              let err;
+              try{ err = JSON.parse(xhr.responseText); }catch(_){ err = { error: xhr.statusText }; }
+              reject(new Error(err.error || xhr.statusText));
+            }
+          };
+          xhr.onerror = ()=>reject(new Error('网络错误'));
+          xhr.ontimeout = ()=>reject(new Error('请求超时'));
+          xhr.timeout = 60000;
+          xhr.send(JSON.stringify(body));
+        });
+      } else {
+        const opts = { method, headers:{'Content-Type':'application/json'} };
+        if(body) opts.body = JSON.stringify(body);
+        const fetchRes = await fetch(API_BASE + path, opts);
+        totalBytesReceived += parseInt(fetchRes.headers.get('Content-Length')||0);
+        if(!fetchRes.ok){
+          const err = await fetchRes.json().catch(()=>({error:fetchRes.statusText}));
+          throw new Error(err.error || fetchRes.statusText);
+        }
+        if(fetchRes.status === 204) res = null;
+        else res = await fetchRes.json();
+      }
+
+      apiLatencyValue = Math.round(performance.now() - startTime);
+      updateApiLatency();
+      setNetStatus('online');
+      hideGlobalLoader();
+      return res;
+    } catch(err){
+      apiLatencyValue = Math.round(performance.now() - startTime);
+      updateApiLatency();
+      setNetStatus(navigator.onLine ? 'online' : 'offline');
+      hideGlobalLoader();
+      throw err;
+    }
+  }
+
+  // ====== 网络状态监测 ======
+  function setNetStatus(status){
+    const dot = document.getElementById('netDot');
+    const text = document.getElementById('netStatus');
+    dot.className = 'status-dot ' + status;
+    text.textContent = status === 'online' ? '在线' : status === 'offline' ? '离线' : '加载中';
+  }
+  window.addEventListener('online', ()=>{
+    setNetStatus('online');
+    showToast('网络已恢复', 'success');
+  });
+  window.addEventListener('offline', ()=>{
+    setNetStatus('offline');
+    showToast('网络已断开，部分功能不可用', 'warning', 6000);
+  });
+
+  function updateApiLatency(){
+    const el = document.getElementById('apiLatency');
+    if(apiLatencyValue !== null){
+      const icon = apiLatencyValue < 300 ? '⚡' : apiLatencyValue < 1000 ? '🔸' : '🐌';
+      el.textContent = `${icon} ${apiLatencyValue}ms`;
+    }
+  }
+
+  // ====== 底部状态栏：时钟 ======
+  function updateClock(){
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2,'0');
+    const m = String(now.getMinutes()).padStart(2,'0');
+    document.getElementById('clockStatus').textContent = `${h}:${m}`;
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  // ====== 底部状态栏：存储统计 ======
+  function formatBytes(bytes){
+    if(bytes < 1024) return bytes + 'B';
+    if(bytes < 1048576) return (bytes/1024).toFixed(1) + 'KB';
+    return (bytes/1048576).toFixed(1) + 'MB';
+  }
+  function updateStorageStatus(){
+    const size = totalBytesSent + totalBytesReceived;
+    const el = document.getElementById('librarySizeStatus');
+    el.textContent = `💾 ${formatBytes(size)}`;
+  }
+  setInterval(updateStorageStatus, 2000);
 
   // ====== 书库渲染 ======
-  async function loadLibrary() {
+  async function loadLibrary(){
     const container = document.getElementById('docListContainer');
-    container.innerHTML = '<div class="loading">加载中...</div>';
-    try {
+    container.innerHTML = '<div class="loading">⏳ 加载中...</div>';
+    try{
       docList = await apiRequest('GET', '/reader/list');
+      updateDocCountStatus();
       applyFiltersAndRender();
-    } catch (err) {
+      showToast(`已加载 ${docList.length} 篇文档`, 'success', 2000);
+    } catch(err){
       container.innerHTML = `<div class="empty-state">加载失败：${escapeHtml(err.message)}</div>`;
+      showToast('加载书库失败：' + err.message, 'error');
     }
   }
 
-  function applyFiltersAndRender() {
-    filteredDocs = [...docList];
+  function updateDocCountStatus(){
+    const active = docList.filter(d => !d.deleted).length;
+    const deleted = docList.filter(d => d.deleted).length;
+    document.getElementById('docCountStatus').textContent = `📚 ${active} 篇${deleted ? ` (♻️${deleted})` : ''}`;
+  }
 
-    // 分类过滤
-    if (currentCategory !== 'all') {
+  function applyFiltersAndRender(){
+    filteredDocs = [...docList];
+    if(currentCategory !== 'all'){
       filteredDocs = filteredDocs.filter(d => d.category === currentCategory);
     }
-
-    // 搜索过滤
-    if (currentSearchTerm) {
+    if(currentSearchTerm){
       const term = currentSearchTerm.toLowerCase();
       filteredDocs = filteredDocs.filter(d =>
         d.title.toLowerCase().includes(term) ||
         (d.tags && d.tags.some(t => t.toLowerCase().includes(term)))
       );
     }
-
-    // 排序
     filteredDocs.sort((a, b) => {
-      if (currentSort === 'title') return a.title.localeCompare(b.title);
+      if(currentSort === 'title') return a.title.localeCompare(b.title);
       return (b[currentSort] || 0) - (a[currentSort] || 0);
     });
-
     renderLibraryList(filteredDocs);
     updateCategoryFilter();
   }
 
-  function renderLibraryList(docs) {
+  function renderLibraryList(docs){
     const container = document.getElementById('docListContainer');
-    if (docs.length === 0) {
+    if(docs.length === 0){
       container.innerHTML = '<div class="empty-state">没有文档</div>';
       return;
     }
-
     let html = '<ul class="doc-list">';
     docs.forEach(doc => {
       const progress = doc.progress ? Math.round(doc.progress * 100) + '%' : '未读';
       const date = doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : '';
       const deletedClass = doc.deleted ? ' deleted-item' : '';
+      const sizeInfo = doc.content ? formatBytes(new Blob([doc.content]).size) : '';
       html += `
         <li class="doc-item${deletedClass}" data-id="${doc.id}">
           <div class="doc-icon">${doc.deleted ? '♻️' : '📄'}</div>
@@ -218,11 +476,12 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
               <span>${date}</span>
               <span>${escapeHtml(doc.category || '未分类')}</span>
               ${doc.tags && doc.tags.length ? `<span>🏷️ ${doc.tags.map(t=>escapeHtml(t)).join(', ')}</span>` : ''}
+              ${sizeInfo ? `<span>📦 ${sizeInfo}</span>` : ''}
               <span class="doc-progress">${progress}</span>
             </div>
           </div>
           <div class="doc-actions">
-            ${doc.deleted ? 
+            ${doc.deleted ?
               `<button class="restore-btn" data-id="${doc.id}">恢复</button>
                <button class="purge-btn" data-id="${doc.id}">彻底删除</button>` :
               `<button class="del-btn" data-id="${doc.id}">删除</button>`}
@@ -233,54 +492,47 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
     html += '</ul>';
     container.innerHTML = html;
 
-    // 绑定事件
     document.querySelectorAll('.doc-item').forEach(item => {
       item.addEventListener('click', (e) => {
-        if (e.target.classList.contains('del-btn') || e.target.classList.contains('restore-btn') || e.target.classList.contains('purge-btn')) return;
-        if (item.classList.contains('deleted-item')) {
-          alert('该文档在回收站中，请先恢复');
+        if(e.target.classList.contains('del-btn') || e.target.classList.contains('restore-btn') || e.target.classList.contains('purge-btn')) return;
+        if(item.classList.contains('deleted-item')){
+          showToast('该文档在回收站中，请先恢复', 'warning');
           return;
         }
         openReader(item.dataset.id);
       });
     });
-
     document.querySelectorAll('.del-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
         const id = btn.dataset.id;
-        if (confirm('确定将此文档移入回收站吗？')) {
-          try { await apiRequest('DELETE', '/reader/delete?id=' + encodeURIComponent(id)); await loadLibrary(); }
-          catch (err) { alert('删除失败：' + err.message); }
+        if(confirm('确定将此文档移入回收站吗？')){
+          try{ await apiRequest('DELETE', '/reader/delete?id=' + encodeURIComponent(id)); showToast('已移入回收站', 'success'); await loadLibrary(); }
+          catch(err){ showToast('删除失败：' + err.message, 'error'); }
         }
       });
     });
-
     document.querySelectorAll('.restore-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
         const id = btn.dataset.id;
-        try { await apiRequest('POST', '/reader/restore', { id }); await loadLibrary(); }
-        catch (err) { alert('恢复失败：' + err.message); }
+        try{ await apiRequest('POST', '/reader/restore', { id }); showToast('文档已恢复', 'success'); await loadLibrary(); }
+        catch(err){ showToast('恢复失败：' + err.message, 'error'); }
       });
     });
-
     document.querySelectorAll('.purge-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
         const id = btn.dataset.id;
-        if (confirm('彻底删除该文档？此操作不可撤销。')) {
-          try { 
-            await apiRequest('POST', '/reader/empty-trash'); // 临时方案，实际应单个彻底删除，但我们用 empty-trash 代替，后面可优化
-            await loadLibrary(); 
-          }
-          catch (err) { alert('彻底删除失败：' + err.message); }
+        if(confirm('彻底删除该文档？此操作不可撤销。')){
+          try{ await apiRequest('POST', '/reader/empty-trash'); showToast('已彻底删除', 'success'); await loadLibrary(); }
+          catch(err){ showToast('彻底删除失败：' + err.message, 'error'); }
         }
       });
     });
   }
 
-  function updateCategoryFilter() {
+  function updateCategoryFilter(){
     const select = document.getElementById('categoryFilter');
     const categories = new Set(docList.map(d => d.category || '未分类'));
     let html = '<option value="all">全部分类</option>';
@@ -291,31 +543,143 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
     select.value = currentCategory;
   }
 
-  // ====== 导入 ======
-  document.getElementById('fileInput').addEventListener('change', async (e) => {
-    const files = e.target.files;
-    if (!files.length) return;
-    for (const file of files) {
-      const content = await readFileAsText(file);
-      const ext = file.name.split('.').pop().toLowerCase();
-      const isMarkdown = ext === 'md' || ext === 'markdown';
-      const title = file.name.replace(/\.[^.]+$/, '') || '未命名';
-      try {
-        await apiRequest('POST', '/reader/import', {
-          title,
-          content,
-          category: '未分类',
-          tags: []
-        });
-      } catch (err) {
-        alert(`导入 ${file.name} 失败：${err.message}`);
-      }
-    }
-    e.target.value = '';
-    await loadLibrary();
+  // ====== 导入（带上传进度） ======
+  const importArea = document.getElementById('importArea');
+  const fileInput = document.getElementById('fileInput');
+
+  // 拖放支持
+  importArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    importArea.classList.add('dragover');
+  });
+  importArea.addEventListener('dragleave', () => {
+    importArea.classList.remove('dragover');
+  });
+  importArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    importArea.classList.remove('dragover');
+    handleFiles(e.dataTransfer.files);
   });
 
-  function readFileAsText(file) {
+  fileInput.addEventListener('change', (e) => {
+    handleFiles(e.target.files);
+  });
+
+  async function handleFiles(files){
+    if(!files.length) return;
+    const uploadPanel = document.getElementById('uploadPanel');
+    const uploadTasks = document.getElementById('uploadTasks');
+    uploadPanel.classList.add('active');
+    activeUploads = files.length;
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for(let i = 0; i < files.length; i++){
+      const file = files[i];
+      const taskId = 'upload-' + Date.now() + '-' + i;
+      const taskEl = document.createElement('div');
+      taskEl.className = 'upload-task';
+      taskEl.id = taskId;
+      taskEl.innerHTML = `
+        <div class="upload-task-info">
+          <span class="upload-task-name">${escapeHtml(file.name)}</span>
+          <span class="upload-task-status">等待中...</span>
+        </div>
+        <div class="upload-bar-wrap"><div class="upload-bar uploading" style="width:0"></div></div>
+        <div class="upload-task-detail">
+          <span class="upload-size">0 / ${formatBytes(file.size)}</span>
+          <span class="upload-speed"></span>
+          <span class="upload-eta"></span>
+        </div>
+      `;
+      uploadTasks.appendChild(taskEl);
+
+      const bar = taskEl.querySelector('.upload-bar');
+      const statusEl = taskEl.querySelector('.upload-task-status');
+      const sizeEl = taskEl.querySelector('.upload-size');
+      const speedEl = taskEl.querySelector('.upload-speed');
+      const etaEl = taskEl.querySelector('.upload-eta');
+
+      try{
+        // 先读取文件内容
+        statusEl.textContent = '读取中...';
+        const content = await readFileAsText(file);
+        const ext = file.name.split('.').pop().toLowerCase();
+        const isMarkdown = ext === 'md' || ext === 'markdown';
+        const title = file.name.replace(/\.[^.]+$/, '') || '未命名';
+
+        // 上传到服务器（带进度）
+        statusEl.textContent = '上传中...';
+        let lastTime = performance.now();
+        let lastLoaded = 0;
+
+        await apiRequest('POST', '/reader/import', {
+          title, content, category: '未分类', tags: []
+        }, (loaded, total, timeStamp) => {
+          const pct = Math.round((loaded / total) * 100);
+          bar.style.width = pct + '%';
+          sizeEl.textContent = `${formatBytes(loaded)} / ${formatBytes(total)}`;
+
+          // 计算速度
+          const now = performance.now();
+          const dt = (now - lastTime) / 1000;
+          if(dt > 0.3){
+            const dl = loaded - lastLoaded;
+            const speed = dl / dt;
+            speedEl.textContent = `${formatBytes(Math.round(speed))}/s`;
+
+            // 预估剩余时间
+            if(speed > 0){
+              const remaining = (total - loaded) / speed;
+              etaEl.textContent = `剩余 ${Math.ceil(remaining)}s`;
+            }
+            lastTime = now;
+            lastLoaded = loaded;
+          }
+
+          if(pct >= 100){
+            statusEl.textContent = '处理中...';
+            bar.classList.remove('uploading');
+            bar.classList.add('done');
+          }
+        });
+
+        statusEl.textContent = '✅ 完成';
+        bar.classList.remove('uploading');
+        bar.classList.add('done');
+        bar.style.width = '100%';
+        successCount++;
+        totalBytesSent += file.size;
+      } catch(err){
+        statusEl.textContent = '❌ ' + err.message;
+        bar.classList.remove('uploading');
+        bar.classList.add('error');
+        failCount++;
+        showToast(`导入 ${file.name} 失败：${err.message}`, 'error');
+      }
+      activeUploads--;
+    }
+
+    fileInput.value = '';
+
+    // 总结
+    if(successCount > 0){
+      showToast(`成功导入 ${successCount} 个文件${failCount ? `，${failCount} 个失败` : ''}`, successCount > 0 ? 'success' : 'warning');
+    }
+
+    // 延迟关闭面板
+    setTimeout(() => {
+      if(activeUploads === 0){
+        uploadPanel.classList.remove('active');
+        uploadTasks.innerHTML = '';
+      }
+    }, 3000);
+
+    await loadLibrary();
+  }
+
+  function readFileAsText(file){
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => resolve(e.target.result);
@@ -325,9 +689,10 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
   }
 
   // ====== 打开阅读器 ======
-  async function openReader(id) {
+  async function openReader(id){
     currentDocId = id;
-    try {
+    showGlobalLoader();
+    try{
       const doc = await apiRequest('GET', '/reader/get?id=' + encodeURIComponent(id));
       currentDocMeta = doc;
       currentDocContent = doc.content;
@@ -336,7 +701,7 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
       document.getElementById('readerTitle').textContent = doc.title;
       const contentEl = document.getElementById('readerContent');
       contentEl.innerHTML = '';
-      if (currentDocType === 'markdown') {
+      if(currentDocType === 'markdown'){
         contentEl.classList.add('markdown');
         const mdDiv = document.createElement('div');
         mdDiv.className = 'md-content';
@@ -348,34 +713,43 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
       }
 
       // 恢复进度
-      if (doc.progress) {
+      if(doc.progress){
         contentEl.scrollTop = doc.progress * contentEl.scrollHeight;
       }
+
       updateReadingStats();
+      updateReadingProgressFloat();
       document.getElementById('libraryPage').style.display = 'none';
       document.getElementById('readerPage').style.display = 'flex';
+      document.getElementById('readingProgressFloat').style.display = 'flex';
+      document.getElementById('readingInfoPanel').style.display = 'flex';
       applyReaderSettings();
-    } catch (err) {
-      alert('打开文档失败：' + err.message);
+      startSessionTimer();
+      showToast(`已打开：${doc.title}`, 'info', 2000);
+    } catch(err){
+      showToast('打开文档失败：' + err.message, 'error');
     }
   }
 
-  function closeReader() {
-    if (currentDocId) {
+  function closeReader(){
+    if(currentDocId){
       const contentEl = document.getElementById('readerContent');
       const progress = contentEl.scrollHeight > 0 ? contentEl.scrollTop / contentEl.scrollHeight : 0;
-      apiRequest('POST', '/reader/progress', { id: currentDocId, progress }).catch(() => {});
+      apiRequest('POST', '/reader/progress', { id: currentDocId, progress }).catch(()=>{});
     }
     document.getElementById('readerPage').style.display = 'none';
     document.getElementById('libraryPage').style.display = 'block';
+    document.getElementById('readingProgressFloat').style.display = 'none';
+    document.getElementById('readingInfoPanel').style.display = 'none';
     currentDocId = null;
     currentDocMeta = null;
     currentDocContent = '';
+    stopSessionTimer();
     loadLibrary();
   }
 
   // ====== 阅读设置 ======
-  function applyReaderSettings() {
+  function applyReaderSettings(){
     const contentEl = document.getElementById('readerContent');
     contentEl.style.fontSize = currentFontSize + 'px';
     contentEl.style.lineHeight = '1.8';
@@ -395,8 +769,8 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
   });
   document.getElementById('fontSizeInput').addEventListener('change', (e) => {
     currentFontSize = parseInt(e.target.value) || 16;
-    if (currentFontSize < 12) currentFontSize = 12;
-    if (currentFontSize > 28) currentFontSize = 28;
+    if(currentFontSize < 12) currentFontSize = 12;
+    if(currentFontSize > 28) currentFontSize = 28;
     e.target.value = currentFontSize;
     applyReaderSettings();
   });
@@ -405,40 +779,98 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
   document.getElementById('themeSepia').addEventListener('click', () => { currentTheme = 'sepia'; applyReaderSettings(); });
 
   // ====== 阅读统计 ======
-  function updateReadingStats() {
-    if (!currentDocMeta) return;
+  function updateReadingStats(){
+    if(!currentDocMeta) return;
     const text = currentDocContent;
-    const words = text.replace(/\s+/g, '').length; // 简单字数统计
-    const readTime = Math.ceil(words / 400); // 假设每分钟400字
+    const words = text.replace(/\s+/g, '').length;
+    const readTime = Math.ceil(words / 400);
     document.getElementById('wordCount').textContent = `字数：${words}`;
     document.getElementById('readTime').textContent = `约${readTime}分钟`;
+    document.getElementById('totalWordsInfo').textContent = `${words}字`;
+  }
+
+  // ====== 阅读进度浮动指示器 & 信息面板 ======
+  function updateReadingProgressFloat(){
+    if(!currentDocId) return;
+    const contentEl = document.getElementById('readerContent');
+    const scrollHeight = contentEl.scrollHeight;
+    const scrollTop = contentEl.scrollTop;
+    const clientHeight = contentEl.clientHeight;
+    const progress = scrollHeight > 0 ? Math.min(1, (scrollTop + clientHeight) / scrollHeight) : 0;
+    const pct = Math.round(progress * 100);
+
+    // 更新环形进度
+    const circumference = 2 * Math.PI * 17;
+    const offset = circumference * (1 - progress);
+    document.getElementById('progressRingFg').style.strokeDashoffset = offset;
+    document.getElementById('progressRingText').textContent = pct + '%';
+    document.getElementById('progressLabel').textContent = `阅读进度 ${pct}%`;
+
+    // 更新信息面板
+    document.getElementById('positionInfo').textContent = pct + '%';
+
+    const totalWords = currentDocContent.replace(/\s+/g, '').length;
+    const wordsRead = Math.round(totalWords * progress);
+    document.getElementById('wordsReadInfo').textContent = `${wordsRead} / ${totalWords}字`;
+
+    const remainWords = totalWords - wordsRead;
+    const remainMin = Math.ceil(remainWords / 400);
+    document.getElementById('remainTimeInfo').textContent = `剩${remainMin}分钟`;
+  }
+
+  // 滚动监听（节流）
+  let scrollTick = false;
+  document.getElementById('readerContent').addEventListener('scroll', () => {
+    if(scrollTick) return;
+    scrollTick = true;
+    requestAnimationFrame(() => {
+      updateReadingProgressFloat();
+      scrollTick = false;
+    });
+  });
+
+  // ====== 阅读会话计时器 ======
+  function startSessionTimer(){
+    sessionStartTime = Date.now();
+    if(sessionTimerInterval) clearInterval(sessionTimerInterval);
+    sessionTimerInterval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+      const min = Math.floor(elapsed / 60);
+      const sec = elapsed % 60;
+      document.getElementById('sessionTimer').textContent = `${min}:${String(sec).padStart(2,'0')}`;
+    }, 1000);
+  }
+  function stopSessionTimer(){
+    if(sessionTimerInterval){
+      clearInterval(sessionTimerInterval);
+      sessionTimerInterval = null;
+    }
+    sessionStartTime = null;
   }
 
   // ====== 目录提取与跳转 ======
   document.getElementById('tocBtn').addEventListener('click', () => {
     const headings = extractTOC(currentDocContent, currentDocType);
-    if (headings.length === 0) {
-      alert('未检测到章节标题');
+    if(headings.length === 0){
+      showToast('未检测到章节标题', 'warning');
       return;
     }
     showModal('目录', buildTOCList(headings));
   });
 
-  function extractTOC(content, type) {
+  function extractTOC(content, type){
     const headings = [];
     const lines = content.split('\n');
-    let index = 0;
-    for (let i = 0; i < lines.length; i++) {
+    for(let i = 0; i < lines.length; i++){
       const line = lines[i].trim();
-      if (type === 'markdown') {
+      if(type === 'markdown'){
         const match = line.match(/^(#{1,3})\s+(.*)/);
-        if (match) {
+        if(match){
           headings.push({ level: match[1].length, text: match[2], line: i });
         }
       } else {
-        // TXT：识别“第X章”、“Chapter X”等
         const match = line.match(/^(第[0-9一二三四五六七八九十百千万]+[章节卷]|Chapter\s+\d+)\s*(.*)/i);
-        if (match) {
+        if(match){
           headings.push({ level: 1, text: line, line: i });
         }
       }
@@ -446,7 +878,7 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
     return headings;
   }
 
-  function buildTOCList(headings) {
+  function buildTOCList(headings){
     let html = '';
     headings.forEach(h => {
       html += `<div class="toc-item" data-line="${h.line}" style="padding-left:${(h.level-1)*16}px">${escapeHtml(h.text)}</div>`;
@@ -454,15 +886,14 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
     return html;
   }
 
-  function jumpToLine(lineNumber) {
+  function jumpToLine(lineNumber){
     const contentEl = document.getElementById('readerContent');
-    // 简单实现：按比例滚动，或使用查找
     const text = contentEl.textContent;
     const lines = text.split('\n');
-    if (lineNumber < lines.length) {
+    if(lineNumber < lines.length){
       const targetText = lines[lineNumber].substring(0, 50);
       const index = text.indexOf(targetText);
-      if (index !== -1) {
+      if(index !== -1){
         const range = document.createRange();
         const textNode = contentEl.firstChild;
         range.setStart(textNode, index);
@@ -476,15 +907,16 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
 
   // ====== 书签功能 ======
   document.getElementById('bookmarkBtn').addEventListener('click', async () => {
-    if (!currentDocId || !currentDocMeta) return;
+    if(!currentDocId || !currentDocMeta) return;
     const contentEl = document.getElementById('readerContent');
     const progress = contentEl.scrollHeight > 0 ? contentEl.scrollTop / contentEl.scrollHeight : 0;
     const note = prompt('书签备注（可选）');
     const bookmark = { progress, note: note || '', time: Date.now() };
     currentDocMeta.bookmarks = currentDocMeta.bookmarks || [];
     currentDocMeta.bookmarks.push(bookmark);
-    try {
+    try{
       await apiRequest('POST', '/reader/update', { id: currentDocId, bookmarks: currentDocMeta.bookmarks });
+      showToast('书签已保存', 'success');
       showModal('书签', currentDocMeta.bookmarks.map((b, i) => `
         <div class="bookmark-item">
           <span>${Math.round(b.progress*100)}%</span>
@@ -492,11 +924,11 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
           <button onclick="jumpToBookmark(${i})">跳转</button>
         </div>
       `).join(''));
-    } catch (err) { alert('保存书签失败：' + err.message); }
+    } catch(err){ showToast('保存书签失败：' + err.message, 'error'); }
   });
 
-  window.jumpToBookmark = function(index) {
-    if (!currentDocMeta || !currentDocMeta.bookmarks[index]) return;
+  window.jumpToBookmark = function(index){
+    if(!currentDocMeta || !currentDocMeta.bookmarks[index]) return;
     const progress = currentDocMeta.bookmarks[index].progress;
     const contentEl = document.getElementById('readerContent');
     contentEl.scrollTop = progress * contentEl.scrollHeight;
@@ -506,32 +938,30 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
   // ====== 全文搜索 ======
   document.getElementById('searchDocBtn').addEventListener('click', () => {
     const keyword = prompt('输入搜索关键词：');
-    if (!keyword) return;
+    if(!keyword) return;
     const contentEl = document.getElementById('readerContent');
     const text = contentEl.textContent;
-    const regex = new RegExp(keyword, 'gi');
+    const regex = new RegExp(keyword.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'gi');
     let match;
     let count = 0;
     const matches = [];
-    while ((match = regex.exec(text)) !== null) {
+    while((match = regex.exec(text)) !== null){
       matches.push(match.index);
       count++;
     }
-    if (count === 0) {
-      alert('未找到匹配项');
+    if(count === 0){
+      showToast('未找到匹配项', 'warning');
       return;
     }
+    showToast(`共找到 ${count} 处匹配`, 'info');
     let current = 0;
-    function highlightAndScroll() {
-      // 清除旧高亮
+    function highlightAndScroll(){
       contentEl.innerHTML = contentEl.textContent.replace(/<span class="highlight">(.*?)<\/span>/g, '$1');
       const text2 = contentEl.textContent;
       const index = matches[current];
-      // 重新添加高亮
       const before = text2.substring(0, index);
       const after = text2.substring(index + keyword.length);
       contentEl.innerHTML = escapeHtml(before) + `<span class="highlight">${escapeHtml(keyword)}</span>` + escapeHtml(after);
-      // 滚动到高亮位置
       const range = document.createRange();
       const span = contentEl.querySelector('.highlight');
       range.setStart(span, 0);
@@ -540,17 +970,16 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
       contentEl.scrollTop += rect.top - contentEl.getBoundingClientRect().top - 50;
     }
     highlightAndScroll();
-    // 继续搜索下一个
     const searchNext = () => {
       current = (current + 1) % matches.length;
       highlightAndScroll();
+      showToast(`第 ${current+1}/${count} 处`, 'info', 1500);
     };
-    alert(`共找到 ${count} 处，点击确定跳转下一处`);
     searchNext();
   });
 
   // ====== 弹窗通用 ======
-  function showModal(title, contentHTML) {
+  function showModal(title, contentHTML){
     const modalContainer = document.getElementById('modalContainer');
     modalContainer.innerHTML = `
       <div class="modal">
@@ -563,15 +992,13 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
         </div>
       </div>
     `;
-    // 绑定目录点击
     modalContainer.querySelectorAll('.toc-item').forEach(item => {
       item.addEventListener('click', () => {
         jumpToLine(parseInt(item.dataset.line));
       });
     });
   }
-
-  window.closeModal = function() {
+  window.closeModal = function(){
     document.getElementById('modalContainer').innerHTML = '';
   };
 
@@ -589,12 +1016,45 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
     applyFiltersAndRender();
   });
   document.getElementById('trashBtn').addEventListener('click', () => {
-    if (confirm('清空回收站？所有已删除文档将被彻底移除。')) {
-      apiRequest('POST', '/reader/empty-trash').then(() => loadLibrary()).catch(err => alert('清空失败：' + err.message));
+    if(confirm('清空回收站？所有已删除文档将被彻底移除。')){
+      apiRequest('POST', '/reader/empty-trash').then(() => {
+        showToast('回收站已清空', 'success');
+        loadLibrary();
+      }).catch(err => showToast('清空失败：' + err.message, 'error'));
     }
   });
 
-  // ====== 初始化 ======
+  // ====== 删除文档按钮 ======
+  document.getElementById('deleteDocBtn').addEventListener('click', async () => {
+    if(!currentDocId) return;
+    if(confirm('确定将此文档移入回收站吗？')){
+      try{
+        await apiRequest('DELETE', '/reader/delete?id=' + encodeURIComponent(currentDocId));
+        showToast('已移入回收站', 'success');
+        closeReader();
+      } catch(err){ showToast('删除失败：' + err.message, 'error'); }
+    }
+  });
+
+  // ====== 工具函数 ======
+  function escapeHtml(str){
+    if(str == null) return '';
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+  }
+
+  // ====== 页面加载完成初始化 ======
+  showGlobalLoader();
+  setNetStatus('loading');
+
+  window.addEventListener('load', () => {
+    showToast('阅读器已加载完成', 'success', 2000);
+    setTimeout(hideGlobalLoader, 500);
+  });
+
+  // 定期更新存储统计
+  setInterval(updateStorageStatus, 3000);
+
+  // 初始化
   loadLibrary();
 })();
 </script>
