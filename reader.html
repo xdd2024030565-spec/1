@@ -85,7 +85,6 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
 .reader-topbar{height:56px;display:flex;align-items:center;padding:0 8px;border-bottom:1px solid var(--border);background:var(--card);gap:4px}
 .reader-title{flex:1;text-align:center;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 8px}
 
-/* ====== 阅读内容区 —— 极致性能 ====== */
 .reader-content{
   flex:1;overflow-y:auto;padding:20px 16px 8px;
   font-family:var(--reader-font-family);
@@ -106,7 +105,6 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
 }
 .vpage-spacer{width:100%;pointer-events:none;contain:strict}
 
-/* ====== 阅读底部设置栏 ====== */
 .reader-settings{background:var(--card);border-top:1px solid var(--border);padding:6px 10px;display:flex;gap:6px;align-items:center;justify-content:space-between;z-index:21;flex-wrap:wrap}
 .setting-group{display:flex;gap:6px;align-items:center}
 .setting-btn{border:1px solid var(--border);background:var(--bg2);color:var(--fg);padding:5px 10px;border-radius:8px;font-size:.85rem;cursor:pointer;white-space:nowrap}
@@ -290,7 +288,6 @@ mark{background:yellow;color:black;border-radius:2px}
   "use strict";
   const API_BASE='https://reader.xdd2024030565.workers.dev';
 
-  // ====== 字体映射表 ======
   const FONT_MAP={
     system:{name:'系统默认',css:'-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif'},
     songti:{name:'宋体',css:'"宋体",SimSun,"Songti SC",serif'},
@@ -302,7 +299,6 @@ mark{background:yellow;color:black;border-radius:2px}
     'noto-sans':{name:'思源黑体',css:'"Noto Sans SC",sans-serif'}
   };
 
-  // ====== 状态 ======
   let currentDocId=null,currentFontSize=16,currentFontFamilyId='system',currentTheme='light',currentLineHeight='1.8';
   let currentDocMeta=null,currentDocContent='',currentDocType='txt';
   let docList=[],filteredDocs=[],currentCategory='all',currentSort='lastReadAt',currentSearchTerm='';
@@ -310,292 +306,119 @@ mark{background:yellow;color:black;border-radius:2px}
   let activeUploads=0,totalBytesSent=0,totalBytesReceived=0;
   let virtualReader=null,tocHeadings=[];
 
-  // ====== 设置持久化 ======
-  function saveSettings(){
-    try{localStorage.setItem('reader-cfg',JSON.stringify({fs:currentFontSize,ff:currentFontFamilyId,th:currentTheme,lh:currentLineHeight}));}catch(e){}
-  }
-  function loadSettings(){
-    try{
-      const s=JSON.parse(localStorage.getItem('reader-cfg')||'{}');
-      if(s.fs)currentFontSize=s.fs;
-      if(s.ff)currentFontFamilyId=s.ff;
-      if(s.th)currentTheme=s.th;
-      if(s.lh)currentLineHeight=s.lh;
-    }catch(e){}
-  }
+  function saveSettings(){try{localStorage.setItem('reader-cfg',JSON.stringify({fs:currentFontSize,ff:currentFontFamilyId,th:currentTheme,lh:currentLineHeight}));}catch(e){}}
+  function loadSettings(){try{const s=JSON.parse(localStorage.getItem('reader-cfg')||'{}');if(s.fs)currentFontSize=s.fs;if(s.ff)currentFontFamilyId=s.ff;if(s.th)currentTheme=s.th;if(s.lh)currentLineHeight=s.lh;}catch(e){}}
   loadSettings();
 
-  // ====================================================================
-  //  VirtualReader v2 —— 增量渲染 + 预取 + 即时字号切换
-  // ====================================================================
+  // ====== 安全 DOM 获取工具 ======
+  function $(id){return document.getElementById(id);}
+  function setText(id,val){const el=$(id);if(el)el.textContent=val;}
+  function setStyle(id,prop,val){const el=$(id);if(el)el.style[prop]=val;}
+
+  // ====== VirtualReader v2 ======
   class VirtualReader{
     constructor(raw,el,isMd,fontSize,fontFamilyCss,lineHeight){
       this.raw=raw;this.el=el;this.isMd=isMd;
       this.fs=fontSize||16;this.ff=fontFamilyCss||'sans-serif';this.lh=lineHeight||'1.8';
       this.CHARS_PER_PAGE=isMd?20000:6000;
-      this.BUFFER=2;        // 前后各预渲染2页 → 共5页
-      this.PREFETCH_AHEAD=3; // idle时预parse后续3页
+      this.BUFFER=2;this.PREFETCH_AHEAD=3;
       this.pages=[];this.total=0;this.cur=0;this.totalWords=0;
       this.cumH=[];this.rendered={};this.mdCache={};
       this.topSp=null;this.botSp=null;
       this.rebuilding=false;this._fontDebounce=null;
       this._prepare();
     }
-
     _prepare(){
       const len=this.raw.length;let off=0;
       while(off<len){
         let end=Math.min(off+this.CHARS_PER_PAGE,len);
-        if(end<len){
-          const sf=Math.max(off,end-500);
-          let bp=this.raw.lastIndexOf('\n\n',end);
-          if(bp<sf)bp=this.raw.lastIndexOf('\n',end);
-          if(bp>=sf)end=bp+1;
-        }
+        if(end<len){const sf=Math.max(off,end-500);let bp=this.raw.lastIndexOf('\n\n',end);if(bp<sf)bp=this.raw.lastIndexOf('\n',end);if(bp>=sf)end=bp+1;}
         const cc=end-off;
         this.pages.push({i:this.pages.length,s:off,e:end,cc:cc,eh:Math.max(80,cc*this.fs*0.052),ah:null});
         off=end;
       }
-      this.total=this.pages.length;
-      this._recalcCum();
-      this.totalWords=this.raw.replace(/\s+/g,'').length;
+      this.total=this.pages.length;this._recalcCum();this.totalWords=this.raw.replace(/\s+/g,'').length;
     }
-
-    _recalcCum(){
-      this.cumH=[0];let sum=0;
-      for(let i=0;i<this.pages.length;i++){sum+=this.pages[i].ah||this.pages[i].eh;this.cumH[i+1]=sum;}
-    }
-
-    _pageAt(st){
-      let lo=0,hi=this.total;
-      while(lo<hi){const mid=(lo+hi)>>1;if(this.cumH[mid+1]<=st)lo=mid+1;else hi=mid;}
-      return Math.min(lo,Math.max(0,this.total-1));
-    }
-
+    _recalcCum(){this.cumH=[0];let sum=0;for(let i=0;i<this.pages.length;i++){sum+=this.pages[i].ah||this.pages[i].eh;this.cumH[i+1]=sum;}}
+    _pageAt(st){let lo=0,hi=this.total;while(lo<hi){const mid=(lo+hi)>>1;if(this.cumH[mid+1]<=st)lo=mid+1;else hi=mid;}return Math.min(lo,Math.max(0,this.total-1));}
     _text(i){return this.raw.substring(this.pages[i].s,this.pages[i].e);}
-
     _makePage(i){
       if(this.rendered[i])return this.rendered[i];
-      const d=document.createElement('div');
-      d.className='vpage';d.dataset.pi=i;
-      d.style.containIntrinsicSize=`auto ${this.pages[i].eh}px`;
-      if(this.isMd){
-        if(this.mdCache[i]===undefined)this.mdCache[i]=marked.parse(this._text(i));
-        d.innerHTML=this.mdCache[i];
-      }else{
-        d.textContent=this._text(i);
-      }
+      const d=document.createElement('div');d.className='vpage';d.dataset.pi=i;
+      d.style.containIntrinsicSize='auto '+this.pages[i].eh+'px';
+      if(this.isMd){if(this.mdCache[i]===undefined)this.mdCache[i]=marked.parse(this._text(i));d.innerHTML=this.mdCache[i];}
+      else{d.textContent=this._text(i);}
       return d;
     }
-
-    // ---- 首次渲染：创建结构 ----
     _initRender(center){
       this.el.innerHTML='';this.rendered={};
       this.topSp=document.createElement('div');this.topSp.className='vpage-spacer';this.el.appendChild(this.topSp);
       const ns=Math.max(0,center-this.BUFFER),ne=Math.min(this.total-1,center+this.BUFFER);
       for(let i=ns;i<=ne;i++){const el=this._makePage(i);this.el.appendChild(el);this.rendered[i]=el;}
       this.botSp=document.createElement('div');this.botSp.className='vpage-spacer';this.el.appendChild(this.botSp);
-      this._updateSpacers(ns,ne);
-      this._measureHeights();
+      this._updateSpacers(ns,ne);this._measureHeights();
     }
-
-    // ---- 增量更新：只增删边缘页面 ----
     _update(center){
       const idx=Object.keys(this.rendered).map(Number).sort((a,b)=>a-b);
       if(idx.length===0){this._initRender(center);return;}
       const ns=Math.max(0,center-this.BUFFER),ne=Math.min(this.total-1,center+this.BUFFER);
       const oldMin=idx[0],oldMax=idx[idx.length-1];
-
-      // 跳跃太远 → 全量重建
-      if(center<oldMin-this.BUFFER-1||center>oldMax+this.BUFFER+1){
-        this._initRender(center);return;
-      }
-
-      // 删除范围外页面
-      for(const k of idx){
-        if(k<ns||k>ne){this.rendered[k].remove();delete this.rendered[k];}
-      }
-      // 前方新增
+      if(center<oldMin-this.BUFFER-1||center>oldMax+this.BUFFER+1){this._initRender(center);return;}
+      for(const k of idx){if(k<ns||k>ne){this.rendered[k].remove();delete this.rendered[k];}}
       const ref=this.rendered[oldMin]||this.botSp;
-      for(let i=ns;i<oldMin;i++){
-        if(!this.rendered[i]){
-          const el=this._makePage(i);
-          this.el.insertBefore(el,ref);this.rendered[i]=el;
-        }
-      }
-      // 后方新增
-      for(let i=oldMax+1;i<=ne;i++){
-        if(!this.rendered[i]){
-          const el=this._makePage(i);
-          this.el.insertBefore(el,this.botSp);this.rendered[i]=el;
-        }
-      }
-      this._updateSpacers(ns,ne);
-      this._measureHeights();
+      for(let i=ns;i<oldMin;i++){if(!this.rendered[i]){const el=this._makePage(i);this.el.insertBefore(el,ref);this.rendered[i]=el;}}
+      for(let i=oldMax+1;i<=ne;i++){if(!this.rendered[i]){const el=this._makePage(i);this.el.insertBefore(el,this.botSp);this.rendered[i]=el;}}
+      this._updateSpacers(ns,ne);this._measureHeights();
     }
-
-    _updateSpacers(ns,ne){
-      this.topSp.style.height=this.cumH[ns]+'px';
-      this.botSp.style.height=(this.cumH[this.total]-this.cumH[ne+1])+'px';
-    }
-
+    _updateSpacers(ns,ne){if(this.topSp)this.topSp.style.height=this.cumH[ns]+'px';if(this.botSp)this.botSp.style.height=(this.cumH[this.total]-this.cumH[ne+1])+'px';}
     _measureHeights(){
       requestAnimationFrame(()=>{
         let changed=false;
-        for(const k in this.rendered){
-          const i=+k,el=this.rendered[i];
-          if(el&&el.offsetHeight>0){
-            const old=this.pages[i].ah||this.pages[i].eh;
-            const now=el.offsetHeight;
-            if(Math.abs(now-old)>5){this.pages[i].ah=now;el.style.containIntrinsicSize=`auto ${now}px`;changed=true;}
-          }
-        }
-        if(changed){
-          this._recalcCum();
-          const idx=Object.keys(this.rendered).map(Number).sort((a,b)=>a-b);
-          if(idx.length)this._updateSpacers(idx[0],idx[idx.length-1]);
-        }
+        for(const k in this.rendered){const i=+k,el=this.rendered[i];if(el&&el.offsetHeight>0){const old=this.pages[i].ah||this.pages[i].eh;const now=el.offsetHeight;if(Math.abs(now-old)>5){this.pages[i].ah=now;el.style.containIntrinsicSize='auto '+now+'px';changed=true;}}}
+        if(changed){this._recalcCum();const idx=Object.keys(this.rendered).map(Number).sort((a,b)=>a-b);if(idx.length)this._updateSpacers(idx[0],idx[idx.length-1]);}
       });
     }
-
     init(progress){
       if(this.total===0)return;
       this.cur=Math.min(this.total-1,Math.floor(progress*this.total));
       this._initRender(this.cur);
-      requestAnimationFrame(()=>{
-        const top=this.cumH[this.cur];
-        const pp=(progress*this.total)-this.cur;
-        const ph=this.pages[this.cur].ah||this.pages[this.cur].eh;
-        this.el.scrollTop=top+pp*ph;
-      });
+      requestAnimationFrame(()=>{const top=this.cumH[this.cur];const pp=(progress*this.total)-this.cur;const ph=this.pages[this.cur].ah||this.pages[this.cur].eh;this.el.scrollTop=top+pp*ph;});
       this._prefetch();
     }
-
     onScroll(){
       if(this.rebuilding)return null;
-      const st=this.el.scrollTop,ch=this.el.clientHeight;
-      const np=this._pageAt(st);
-      const idx=Object.keys(this.rendered).map(Number);
-      if(!idx.length)return null;
+      const st=this.el.scrollTop,ch=this.el.clientHeight;const np=this._pageAt(st);
+      const idx=Object.keys(this.rendered).map(Number);if(!idx.length)return null;
       const s=Math.min(...idx),e=Math.max(...idx);
-      if(np<s||np>e){
-        this.rebuilding=true;
-        const saved=st;
-        this.cur=np;
-        this._update(np);
-        requestAnimationFrame(()=>{this.el.scrollTop=saved;this.rebuilding=false;});
-      }else{this.cur=np;}
-      const totalH=this.cumH[this.total];
-      const prog=totalH>0?Math.min(1,(st+ch)/totalH):0;
+      if(np<s||np>e){this.rebuilding=true;const saved=st;this.cur=np;this._update(np);requestAnimationFrame(()=>{this.el.scrollTop=saved;this.rebuilding=false;});}else{this.cur=np;}
+      const totalH=this.cumH[this.total];const prog=totalH>0?Math.min(1,(st+ch)/totalH):0;
       return{page:this.cur+1,total:this.total,progress:prog,totalWords:this.totalWords,wordsRead:Math.round(this.totalWords*prog)};
     }
-
-    // ---- requestIdleCallback 预取后续页 ----
-    _prefetch(){
-      if(!this.isMd||!('requestIdleCallback'in window))return;
-      requestIdleCallback(()=>{
-        const start=this.cur+this.BUFFER+1;
-        const end=Math.min(this.total-1,this.cur+this.BUFFER+this.PREFETCH_AHEAD);
-        for(let i=start;i<=end;i++){
-          if(this.mdCache[i]===undefined){
-            this.mdCache[i]=marked.parse(this._text(i));
-          }
-        }
-      },{timeout:1000});
-    }
-
-    jumpToPage(i){
-      if(i<0||i>=this.total)return;
-      this.cur=i;this._initRender(i);
-      requestAnimationFrame(()=>{this.el.scrollTop=this.cumH[i];});
-      this._prefetch();
-    }
+    _prefetch(){if(!this.isMd||!('requestIdleCallback'in window))return;requestIdleCallback(()=>{const start=this.cur+this.BUFFER+1;const end=Math.min(this.total-1,this.cur+this.BUFFER+this.PREFETCH_AHEAD);for(let i=start;i<=end;i++){if(this.mdCache[i]===undefined)this.mdCache[i]=marked.parse(this._text(i));}},{timeout:1000});}
+    jumpToPage(i){if(i<0||i>=this.total)return;this.cur=i;this._initRender(i);requestAnimationFrame(()=>{this.el.scrollTop=this.cumH[i];});this._prefetch();}
     jumpToProgress(p){this.jumpToPage(Math.min(this.total-1,Math.floor(p*this.total)));}
-
-    _pageByChar(ci){
-      for(let i=0;i<this.pages.length;i++)if(ci>=this.pages[i].s&&ci<this.pages[i].e)return i;
-      return this.total-1;
-    }
-
-    search(kw,max=200){
-      const esc=kw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-      const re=new RegExp(esc,'gi');const res=[];let m;
-      while((m=re.exec(this.raw))!==null){
-        res.push({idx:m.index,page:this._pageByChar(m.index),ctx:this.raw.substring(Math.max(0,m.index-40),m.index+kw.length+40)});
-        if(res.length>=max)break;
-      }
-      return res;
-    }
-
-    getTOC(){
-      const hs=[];const lines=this.raw.split('\n');let cOff=0;
-      for(let i=0;i<lines.length;i++){
-        const line=lines[i].trim();
-        if(this.isMd){
-          const m=line.match(/^(#{1,3})\s+(.*)/);
-          if(m)hs.push({level:m[1].length,text:m[2],page:this._pageByChar(cOff)});
-        }else{
-          const m=line.match(/^(第[0-9一二三四五六七八九十百千万]+[章节卷]|Chapter\s+\d+)\s*(.*)/i);
-          if(m)hs.push({level:1,text:line,page:this._pageByChar(cOff)});
-        }
-        cOff+=lines[i].length+1;
-      }
-      return hs;
-    }
-
-    // ---- 即时字号切换：只改CSS，延迟重算 ----
-    changeFontSize(fs){
-      this.fs=fs;
-      this.el.style.setProperty('--reader-font-size',fs+'px');
-      clearTimeout(this._fontDebounce);
-      this._fontDebounce=setTimeout(()=>this._recalcAfterFontChange(),200);
-    }
-
-    // ---- 即时字体切换：只改CSS ----
-    changeFontFamily(ffCss){
-      this.ff=ffCss;
-      this.el.style.setProperty('--reader-font-family',ffCss);
-      clearTimeout(this._fontDebounce);
-      this._fontDebounce=setTimeout(()=>this._recalcAfterFontChange(),350);
-    }
-
-    // ---- 即时行距切换：只改CSS ----
-    changeLineHeight(lh){
-      this.lh=lh;
-      this.el.style.setProperty('--reader-line-height',lh);
-      clearTimeout(this._fontDebounce);
-      this._fontDebounce=setTimeout(()=>this._recalcAfterFontChange(),200);
-    }
-
-    _recalcAfterFontChange(){
-      for(let i=0;i<this.pages.length;i++){
-        this.pages[i].eh=Math.max(80,this.pages[i].cc*this.fs*0.052);
-        this.pages[i].ah=null;
-      }
-      for(const k in this.rendered){
-        const i=+k,el=this.rendered[i];
-        if(el&&el.offsetHeight>0)this.pages[i].ah=el.offsetHeight;
-      }
-      this._recalcCum();
-      const idx=Object.keys(this.rendered).map(Number).sort((a,b)=>a-b);
-      if(idx.length)this._updateSpacers(idx[0],idx[idx.length-1]);
-      this._prefetch();
-    }
-
+    _pageByChar(ci){for(let i=0;i<this.pages.length;i++)if(ci>=this.pages[i].s&&ci<this.pages[i].e)return i;return this.total-1;}
+    search(kw,max=200){const esc=kw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');const re=new RegExp(esc,'gi');const res=[];let m;while((m=re.exec(this.raw))!==null){res.push({idx:m.index,page:this._pageByChar(m.index),ctx:this.raw.substring(Math.max(0,m.index-40),m.index+kw.length+40)});if(res.length>=max)break;}return res;}
+    getTOC(){const hs=[];const lines=this.raw.split('\n');let cOff=0;for(let i=0;i<lines.length;i++){const line=lines[i].trim();if(this.isMd){const m=line.match(/^(#{1,3})\s+(.*)/);if(m)hs.push({level:m[1].length,text:m[2],page:this._pageByChar(cOff)});}else{const m=line.match(/^(第[0-9一二三四五六七八九十百千万]+[章节卷]|Chapter\s+\d+)\s*(.*)/i);if(m)hs.push({level:1,text:line,page:this._pageByChar(cOff)});}cOff+=lines[i].length+1;}return hs;}
+    changeFontSize(fs){this.fs=fs;this.el.style.setProperty('--reader-font-size',fs+'px');clearTimeout(this._fontDebounce);this._fontDebounce=setTimeout(()=>this._recalcAfterFontChange(),200);}
+    changeFontFamily(ffCss){this.ff=ffCss;this.el.style.setProperty('--reader-font-family',ffCss);clearTimeout(this._fontDebounce);this._fontDebounce=setTimeout(()=>this._recalcAfterFontChange(),350);}
+    changeLineHeight(lh){this.lh=lh;this.el.style.setProperty('--reader-line-height',lh);clearTimeout(this._fontDebounce);this._fontDebounce=setTimeout(()=>this._recalcAfterFontChange(),200);}
+    _recalcAfterFontChange(){for(let i=0;i<this.pages.length;i++){this.pages[i].eh=Math.max(80,this.pages[i].cc*this.fs*0.052);this.pages[i].ah=null;}for(const k in this.rendered){const i=+k,el=this.rendered[i];if(el&&el.offsetHeight>0)this.pages[i].ah=el.offsetHeight;}this._recalcCum();const idx=Object.keys(this.rendered).map(Number).sort((a,b)=>a-b);if(idx.length)this._updateSpacers(idx[0],idx[idx.length-1]);this._prefetch();}
     destroy(){this.el.innerHTML='';this.rendered={};this.pages=[];this.raw='';this.mdCache={};}
   }
 
   // ====== 全局加载进度条 ======
-  const globalLoader=document.getElementById('globalLoader');let loaderTimeout=null;
-  function showGlobalLoader(){globalLoader.classList.remove('complete');globalLoader.classList.add('loading');clearTimeout(loaderTimeout);}
-  function hideGlobalLoader(){globalLoader.classList.remove('loading');globalLoader.classList.add('complete');clearTimeout(loaderTimeout);loaderTimeout=setTimeout(()=>{globalLoader.classList.remove('complete');globalLoader.style.width='0';},600);}
+  const globalLoader=$('globalLoader');let loaderTimeout=null;
+  function showGlobalLoader(){if(!globalLoader)return;globalLoader.classList.remove('complete');globalLoader.classList.add('loading');clearTimeout(loaderTimeout);}
+  function hideGlobalLoader(){if(!globalLoader)return;globalLoader.classList.remove('loading');globalLoader.classList.add('complete');clearTimeout(loaderTimeout);loaderTimeout=setTimeout(()=>{globalLoader.classList.remove('complete');globalLoader.style.width='0';},600);}
 
   // ====== Toast ======
-  const toastContainer=document.getElementById('toastContainer');
+  const toastContainer=$('toastContainer');
   const toastIcons={success:'✅',error:'❌',info:'ℹ️',warning:'⚠️'};
   function showToast(msg,type='info',dur=3500){
+    if(!toastContainer)return;
     const t=document.createElement('div');t.className='toast';
-    t.innerHTML=`<span class="toast-icon">${toastIcons[type]||toastIcons.info}</span><span class="toast-msg">${escapeHtml(msg)}</span>`;
+    t.innerHTML='<span class="toast-icon">'+(toastIcons[type]||toastIcons.info)+'</span><span class="toast-msg">'+escapeHtml(msg)+'</span>';
     toastContainer.appendChild(t);t.addEventListener('click',()=>removeToast(t));
     if(dur>0)setTimeout(()=>removeToast(t),dur);
     while(toastContainer.children.length>5)removeToast(toastContainer.firstChild);
@@ -624,23 +447,23 @@ mark{background:yellow;color:black;border-radius:2px}
     }catch(err){apiLatencyValue=Math.round(performance.now()-t0);updateApiLatency();setNetStatus(navigator.onLine?'online':'offline');hideGlobalLoader();throw err;}
   }
 
-  function setNetStatus(s){document.getElementById('netDot').className='status-dot '+s;document.getElementById('netStatus').textContent=s==='online'?'在线':s==='offline'?'离线':'加载中';}
+  function setNetStatus(s){const dot=$('netDot'),st=$('netStatus');if(dot)dot.className='status-dot '+s;if(st)st.textContent=s==='online'?'在线':s==='offline'?'离线':'加载中';}
   window.addEventListener('online',()=>{setNetStatus('online');showToast('网络已恢复','success');});
   window.addEventListener('offline',()=>{setNetStatus('offline');showToast('网络已断开，部分功能不可用','warning',6000);});
-  function updateApiLatency(){const el=document.getElementById('apiLatency');if(apiLatencyValue!==null){const ic=apiLatencyValue<300?'⚡':apiLatencyValue<1000?'🔸':'🐌';el.textContent=`${ic} ${apiLatencyValue}ms`;}}
-  function updateClock(){const n=new Date();document.getElementById('clockStatus').textContent=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;}
+  function updateApiLatency(){const el=$('apiLatency');if(el&&apiLatencyValue!==null){const ic=apiLatencyValue<300?'⚡':apiLatencyValue<1000?'🔸':'🐌';el.textContent=ic+' '+apiLatencyValue+'ms';}}
+  function updateClock(){const n=new Date();setText('clockStatus',String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'));}
   setInterval(updateClock,1000);updateClock();
   function formatBytes(b){if(b<1024)return b+'B';if(b<1048576)return(b/1024).toFixed(1)+'KB';return(b/1048576).toFixed(1)+'MB';}
-  function updateStorageStatus(){document.getElementById('librarySizeStatus').textContent=`💾 ${formatBytes(totalBytesSent+totalBytesReceived)}`;}
+  function updateStorageStatus(){setText('librarySizeStatus','💾 '+formatBytes(totalBytesSent+totalBytesReceived));}
   setInterval(updateStorageStatus,2000);
 
   // ====== 书库 ======
   async function loadLibrary(){
-    const c=document.getElementById('docListContainer');c.innerHTML='<div class="loading">⏳ 加载中...</div>';
-    try{docList=await apiRequest('GET','/reader/list');updateDocCountStatus();applyFiltersAndRender();showToast(`已加载 ${docList.length} 篇文档`,'success',2000);}
-    catch(err){c.innerHTML=`<div class="empty-state">加载失败：${escapeHtml(err.message)}</div>`;showToast('加载书库失败：'+err.message,'error');}
+    const c=$('docListContainer');if(!c)return;c.innerHTML='<div class="loading">⏳ 加载中...</div>';
+    try{docList=await apiRequest('GET','/reader/list');updateDocCountStatus();applyFiltersAndRender();showToast('已加载 '+docList.length+' 篇文档','success',2000);}
+    catch(err){c.innerHTML='<div class="empty-state">加载失败：'+escapeHtml(err.message)+'</div>';showToast('加载书库失败：'+err.message,'error');}
   }
-  function updateDocCountStatus(){const a=docList.filter(d=>!d.deleted).length,d2=docList.filter(d=>d.deleted).length;document.getElementById('docCountStatus').textContent=`📚 ${a} 篇${d2?` (♻️${d2})`:''}`;}
+  function updateDocCountStatus(){const a=docList.filter(d=>!d.deleted).length,d2=docList.filter(d=>d.deleted).length;setText('docCountStatus','📚 '+a+' 篇'+(d2?' (♻️'+d2+')':''));}
   function applyFiltersAndRender(){
     filteredDocs=[...docList];
     if(currentCategory!=='all')filteredDocs=filteredDocs.filter(d=>d.category===currentCategory);
@@ -649,7 +472,7 @@ mark{background:yellow;color:black;border-radius:2px}
     renderLibraryList(filteredDocs);updateCategoryFilter();
   }
   function renderLibraryList(docs){
-    const c=document.getElementById('docListContainer');
+    const c=$('docListContainer');if(!c)return;
     if(!docs.length){c.innerHTML='<div class="empty-state">没有文档</div>';return;}
     let html='<ul class="doc-list">';
     docs.forEach(doc=>{
@@ -657,7 +480,7 @@ mark{background:yellow;color:black;border-radius:2px}
       const date=doc.createdAt?new Date(doc.createdAt).toLocaleDateString():'';
       const dc=doc.deleted?' deleted-item':'';
       const sz=doc.content?formatBytes(new Blob([doc.content]).size):'';
-      html+=`<li class="doc-item${dc}" data-id="${doc.id}"><div class="doc-icon">${doc.deleted?'♻️':'📄'}</div><div class="doc-info"><div class="doc-title">${escapeHtml(doc.title)}</div><div class="doc-meta"><span>${date}</span><span>${escapeHtml(doc.category||'未分类')}</span>${doc.tags&&doc.tags.length?`<span>🏷️ ${doc.tags.map(t=>escapeHtml(t)).join(', ')}</span>`:''}${sz?`<span>📦 ${sz}</span>`:''}<span class="doc-progress">${prog}</span></div></div><div class="doc-actions">${doc.deleted?`<button class="restore-btn" data-id="${doc.id}">恢复</button><button class="purge-btn" data-id="${doc.id}">彻底删除</button>`:`<button class="del-btn" data-id="${doc.id}">删除</button>`}</div></li>`;
+      html+='<li class="doc-item'+dc+'" data-id="'+doc.id+'"><div class="doc-icon">'+(doc.deleted?'♻️':'📄')+'</div><div class="doc-info"><div class="doc-title">'+escapeHtml(doc.title)+'</div><div class="doc-meta"><span>'+date+'</span><span>'+escapeHtml(doc.category||'未分类')+'</span>'+(doc.tags&&doc.tags.length?'<span>🏷️ '+doc.tags.map(t=>escapeHtml(t)).join(', ')+'</span>':'')+(sz?'<span>📦 '+sz+'</span>':'')+'<span class="doc-progress">'+prog+'</span></div></div><div class="doc-actions">'+(doc.deleted?'<button class="restore-btn" data-id="'+doc.id+'">恢复</button><button class="purge-btn" data-id="'+doc.id+'">彻底删除</button>':'<button class="del-btn" data-id="'+doc.id+'">删除</button>')+'</div></li>';
     });
     html+='</ul>';c.innerHTML=html;
     c.querySelectorAll('.doc-item').forEach(item=>{item.addEventListener('click',(e)=>{if(e.target.classList.contains('del-btn')||e.target.classList.contains('restore-btn')||e.target.classList.contains('purge-btn'))return;if(item.classList.contains('deleted-item')){showToast('该文档在回收站中，请先恢复','warning');return;}openReader(item.dataset.id);});});
@@ -665,33 +488,35 @@ mark{background:yellow;color:black;border-radius:2px}
     c.querySelectorAll('.restore-btn').forEach(b=>b.addEventListener('click',async(e)=>{e.stopPropagation();try{await apiRequest('POST','/reader/restore',{id:b.dataset.id});showToast('文档已恢复','success');await loadLibrary();}catch(err){showToast('恢复失败：'+err.message,'error');}}));
     c.querySelectorAll('.purge-btn').forEach(b=>b.addEventListener('click',async(e)=>{e.stopPropagation();if(confirm('彻底删除？不可撤销。')){try{await apiRequest('POST','/reader/empty-trash');showToast('已彻底删除','success');await loadLibrary();}catch(err){showToast('彻底删除失败：'+err.message,'error');}}}));
   }
-  function updateCategoryFilter(){const sel=document.getElementById('categoryFilter');const cats=new Set(docList.map(d=>d.category||'未分类'));let h='<option value="all">全部分类</option>';cats.forEach(c=>h+=`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`);sel.innerHTML=h;sel.value=currentCategory;}
+  function updateCategoryFilter(){const sel=$('categoryFilter');if(!sel)return;const cats=new Set(docList.map(d=>d.category||'未分类'));let h='<option value="all">全部分类</option>';cats.forEach(c=>h+='<option value="'+escapeHtml(c)+'">'+escapeHtml(c)+'</option>');sel.innerHTML=h;sel.value=currentCategory;}
 
   // ====== 导入 ======
-  const importArea=document.getElementById('importArea'),fileInput=document.getElementById('fileInput');
-  importArea.addEventListener('dragover',e=>{e.preventDefault();importArea.classList.add('dragover');});
-  importArea.addEventListener('dragleave',()=>importArea.classList.remove('dragover'));
-  importArea.addEventListener('drop',e=>{e.preventDefault();importArea.classList.remove('dragover');handleFiles(e.dataTransfer.files);});
-  fileInput.addEventListener('change',e=>handleFiles(e.target.files));
+  const importArea=$('importArea'),fileInput=$('fileInput');
+  if(importArea){
+    importArea.addEventListener('dragover',e=>{e.preventDefault();importArea.classList.add('dragover');});
+    importArea.addEventListener('dragleave',()=>importArea.classList.remove('dragover'));
+    importArea.addEventListener('drop',e=>{e.preventDefault();importArea.classList.remove('dragover');handleFiles(e.dataTransfer.files);});
+  }
+  if(fileInput)fileInput.addEventListener('change',e=>handleFiles(e.target.files));
   async function handleFiles(files){
-    if(!files.length)return;const panel=document.getElementById('uploadPanel'),tasks=document.getElementById('uploadTasks');
+    if(!files.length)return;const panel=$('uploadPanel'),tasks=$('uploadTasks');if(!panel||!tasks)return;
     panel.classList.add('active');activeUploads=files.length;let ok=0,fail=0;
     for(let i=0;i<files.length;i++){
       const file=files[i];const tEl=document.createElement('div');tEl.className='upload-task';
-      tEl.innerHTML=`<div class="upload-task-info"><span class="upload-task-name">${escapeHtml(file.name)}</span><span class="upload-task-status">等待中...</span></div><div class="upload-bar-wrap"><div class="upload-bar uploading" style="width:0"></div></div><div class="upload-task-detail"><span class="upload-size">0 / ${formatBytes(file.size)}</span><span class="upload-speed"></span><span class="upload-eta"></span></div>`;
+      tEl.innerHTML='<div class="upload-task-info"><span class="upload-task-name">'+escapeHtml(file.name)+'</span><span class="upload-task-status">等待中...</span></div><div class="upload-bar-wrap"><div class="upload-bar uploading" style="width:0"></div></div><div class="upload-task-detail"><span class="upload-size">0 / '+formatBytes(file.size)+'</span><span class="upload-speed"></span><span class="upload-eta"></span></div>';
       tasks.appendChild(tEl);
       const bar=tEl.querySelector('.upload-bar'),stEl=tEl.querySelector('.upload-task-status'),szEl=tEl.querySelector('.upload-size'),spEl=tEl.querySelector('.upload-speed'),etEl=tEl.querySelector('.upload-eta');
       try{
         stEl.textContent='读取中...';const content=await readFileAsText(file);
         const title=file.name.replace(/\.[^.]+$/,'')||'未命名';stEl.textContent='上传中...';
         let lt=performance.now(),ll=0;
-        await apiRequest('POST','/reader/import',{title,content,category:'未分类',tags:[]},(loaded,total)=>{const pct=Math.round((loaded/total)*100);bar.style.width=pct+'%';szEl.textContent=`${formatBytes(loaded)} / ${formatBytes(total)}`;const now=performance.now();const dt=(now-lt)/1000;if(dt>0.3){const sp=(loaded-ll)/dt;spEl.textContent=`${formatBytes(Math.round(sp))}/s`;if(sp>0)etEl.textContent=`剩余 ${Math.ceil((total-loaded)/sp)}s`;lt=now;ll=loaded;}if(pct>=100){stEl.textContent='处理中...';bar.classList.remove('uploading');bar.classList.add('done');}});
+        await apiRequest('POST','/reader/import',{title,content,category:'未分类',tags:[]},(loaded,total)=>{const pct=Math.round((loaded/total)*100);bar.style.width=pct+'%';szEl.textContent=formatBytes(loaded)+' / '+formatBytes(total);const now=performance.now();const dt=(now-lt)/1000;if(dt>0.3){const sp=(loaded-ll)/dt;spEl.textContent=formatBytes(Math.round(sp))+'/s';if(sp>0)etEl.textContent='剩余 '+Math.ceil((total-loaded)/sp)+'s';lt=now;ll=loaded;}if(pct>=100){stEl.textContent='处理中...';bar.classList.remove('uploading');bar.classList.add('done');}});
         stEl.textContent='✅ 完成';bar.classList.remove('uploading');bar.classList.add('done');bar.style.width='100%';ok++;totalBytesSent+=file.size;
-      }catch(err){stEl.textContent='❌ '+err.message;bar.classList.remove('uploading');bar.classList.add('error');fail++;showToast(`导入 ${file.name} 失败`,'error');}
+      }catch(err){stEl.textContent='❌ '+err.message;bar.classList.remove('uploading');bar.classList.add('error');fail++;showToast('导入 '+file.name+' 失败','error');}
       activeUploads--;
     }
-    fileInput.value='';
-    if(ok>0)showToast(`成功导入 ${ok} 个文件${fail?`，${fail} 个失败`:''}`,'success');
+    if(fileInput)fileInput.value='';
+    if(ok>0)showToast('成功导入 '+ok+' 个文件'+(fail?'，'+fail+' 个失败':''),'success');
     setTimeout(()=>{if(activeUploads===0){panel.classList.remove('active');tasks.innerHTML='';}},3000);
     await loadLibrary();
   }
@@ -700,29 +525,37 @@ mark{background:yellow;color:black;border-radius:2px}
   // ====== 打开阅读器 ======
   async function openReader(id){
     currentDocId=id;
-    const prepOverlay=document.getElementById('contentPrepOverlay'),prepText=document.getElementById('prepText');
-    prepText.textContent='正在下载文档...';prepOverlay.classList.add('active');
+    const prepOverlay=$('contentPrepOverlay');
+    setText('prepText','正在下载文档...');
+    if(prepOverlay)prepOverlay.classList.add('active');
     try{
       const doc=await apiRequest('GET','/reader/get?id='+encodeURIComponent(id));
       currentDocMeta=doc;currentDocContent=doc.content||'';
       currentDocType=(doc.title.endsWith('.md')||doc.title.endsWith('.markdown'))?'markdown':'txt';
-      document.getElementById('readerTitle').textContent=doc.title;
-      await new Promise(r=>setTimeout(r,30));prepText.textContent='正在分页处理...';await new Promise(r=>setTimeout(r,30));
-      const contentEl=document.getElementById('readerContent');contentEl.innerHTML='';
+      setText('readerTitle',doc.title);
+      await new Promise(r=>setTimeout(r,30));
+      setText('prepText','正在分页处理...');
+      await new Promise(r=>setTimeout(r,30));
+      const contentEl=$('readerContent');
+      if(!contentEl)throw new Error('阅读器容器不存在');
+      contentEl.innerHTML='';
       if(currentDocType==='markdown')contentEl.classList.add('markdown');else contentEl.classList.remove('markdown');
       const ffCss=FONT_MAP[currentFontFamilyId]?FONT_MAP[currentFontFamilyId].css:'sans-serif';
       virtualReader=new VirtualReader(currentDocContent,contentEl,currentDocType==='markdown',currentFontSize,ffCss,currentLineHeight);
       tocHeadings=virtualReader.getTOC();
       updateReadingStats();
       virtualReader.init(doc.progress||0);
-      document.getElementById('libraryPage').style.display='none';
-      document.getElementById('readerPage').style.display='flex';
-      document.getElementById('readingProgressFloat').style.display='flex';
-      document.getElementById('readingInfoPanel').style.display='flex';
+      const lp=$('libraryPage');if(lp)lp.style.display='none';
+      const rp=$('readerPage');if(rp)rp.style.display='flex';
+      const rpf=$('readingProgressFloat');if(rpf)rpf.style.display='flex';
+      const rip=$('readingInfoPanel');if(rip)rip.style.display='flex';
       applyReaderSettings();startSessionTimer();updatePageInfo();updateReadingProgressFloat();
-      prepOverlay.classList.remove('active');
-      showToast(`已打开：${doc.title}（${virtualReader.total} 页）`,'info',2500);
-    }catch(err){prepOverlay.classList.remove('active');showToast('打开文档失败：'+err.message,'error');}
+      if(prepOverlay)prepOverlay.classList.remove('active');
+      showToast('已打开：'+doc.title+'（'+virtualReader.total+' 页）','info',2500);
+    }catch(err){
+      if(prepOverlay)prepOverlay.classList.remove('active');
+      showToast('打开文档失败：'+err.message,'error');
+    }
   }
 
   function closeReader(){
@@ -731,134 +564,130 @@ mark{background:yellow;color:black;border-radius:2px}
       apiRequest('POST','/reader/progress',{id:currentDocId,progress}).catch(()=>{});
       virtualReader.destroy();virtualReader=null;
     }
-    document.getElementById('readerPage').style.display='none';
-    document.getElementById('libraryPage').style.display='block';
-    document.getElementById('readingProgressFloat').style.display='none';
-    document.getElementById('readingInfoPanel').style.display='none';
+    const rp=$('readerPage');if(rp)rp.style.display='none';
+    const lp=$('libraryPage');if(lp)lp.style.display='block';
+    const rpf=$('readingProgressFloat');if(rpf)rpf.style.display='none';
+    const rip=$('readingInfoPanel');if(rip)rip.style.display='none';
     currentDocId=null;currentDocMeta=null;currentDocContent='';tocHeadings=[];
     stopSessionTimer();loadLibrary();
   }
 
   // ====== 阅读设置 ======
   function applyReaderSettings(){
-    const ce=document.getElementById('readerContent');
-    ce.style.setProperty('--reader-font-size',currentFontSize+'px');
-    ce.style.setProperty('--reader-font-family',FONT_MAP[currentFontFamilyId]?FONT_MAP[currentFontFamilyId].css:'sans-serif');
-    ce.style.setProperty('--reader-line-height',currentLineHeight);
+    const ce=$('readerContent');
+    if(ce){ce.style.setProperty('--reader-font-size',currentFontSize+'px');ce.style.setProperty('--reader-font-family',FONT_MAP[currentFontFamilyId]?FONT_MAP[currentFontFamilyId].css:'sans-serif');ce.style.setProperty('--reader-line-height',currentLineHeight);}
     document.body.className='theme-'+currentTheme;
-    document.getElementById('fontSizeInput').value=currentFontSize;
-    document.getElementById('fontFamilySelect').value=currentFontFamilyId;
-    document.getElementById('lineHeightSelect').value=currentLineHeight;
-    // 主题按钮高亮
+    const fsi=$('fontSizeInput');if(fsi)fsi.value=currentFontSize;
+    const ffs=$('fontFamilySelect');if(ffs)ffs.value=currentFontFamilyId;
+    const lhs=$('lineHeightSelect');if(lhs)lhs.value=currentLineHeight;
     document.querySelectorAll('#themeLight,#themeDark,#themeSepia').forEach(b=>b.classList.remove('active'));
     const themeMap={light:'themeLight',dark:'themeDark',sepia:'themeSepia'};
-    const btn=document.getElementById(themeMap[currentTheme]);
-    if(btn)btn.classList.add('active');
+    const btn=$(themeMap[currentTheme]);if(btn)btn.classList.add('active');
   }
 
-  document.getElementById('backBtn').addEventListener('click',closeReader);
+  const backBtn=$('backBtn');if(backBtn)backBtn.addEventListener('click',closeReader);
 
-  // 字号 —— 即时切换，零卡顿
-  document.getElementById('fontMinus').addEventListener('click',()=>{currentFontSize=Math.max(12,currentFontSize-1);document.getElementById('fontSizeInput').value=currentFontSize;applyReaderSettings();if(virtualReader)virtualReader.changeFontSize(currentFontSize);saveSettings();});
-  document.getElementById('fontPlus').addEventListener('click',()=>{currentFontSize=Math.min(32,currentFontSize+1);document.getElementById('fontSizeInput').value=currentFontSize;applyReaderSettings();if(virtualReader)virtualReader.changeFontSize(currentFontSize);saveSettings();});
-  document.getElementById('fontSizeInput').addEventListener('change',(e)=>{currentFontSize=Math.max(12,Math.min(32,parseInt(e.target.value)||16));e.target.value=currentFontSize;applyReaderSettings();if(virtualReader)virtualReader.changeFontSize(currentFontSize);saveSettings();});
+  const fontMinus=$('fontMinus');if(fontMinus)fontMinus.addEventListener('click',()=>{currentFontSize=Math.max(12,currentFontSize-1);applyReaderSettings();if(virtualReader)virtualReader.changeFontSize(currentFontSize);saveSettings();});
+  const fontPlus=$('fontPlus');if(fontPlus)fontPlus.addEventListener('click',()=>{currentFontSize=Math.min(32,currentFontSize+1);applyReaderSettings();if(virtualReader)virtualReader.changeFontSize(currentFontSize);saveSettings();});
+  const fontSizeInput=$('fontSizeInput');if(fontSizeInput)fontSizeInput.addEventListener('change',(e)=>{currentFontSize=Math.max(12,Math.min(32,parseInt(e.target.value)||16));e.target.value=currentFontSize;applyReaderSettings();if(virtualReader)virtualReader.changeFontSize(currentFontSize);saveSettings();});
 
-  // 字体选择
-  document.getElementById('fontFamilySelect').addEventListener('change',(e)=>{
-    currentFontFamilyId=e.target.value;
-    const ff=FONT_MAP[currentFontFamilyId]||FONT_MAP.system;
-    applyReaderSettings();
-    if(virtualReader)virtualReader.changeFontFamily(ff.css);
-    saveSettings();
-    showToast(`字体已切换：${ff.name}`,'info',1500);
+  const fontFamilySelect=$('fontFamilySelect');
+  if(fontFamilySelect)fontFamilySelect.addEventListener('change',(e)=>{
+    currentFontFamilyId=e.target.value;const ff=FONT_MAP[currentFontFamilyId]||FONT_MAP.system;
+    applyReaderSettings();if(virtualReader)virtualReader.changeFontFamily(ff.css);saveSettings();
+    showToast('字体已切换：'+ff.name,'info',1500);
   });
 
-  // 行距选择
-  document.getElementById('lineHeightSelect').addEventListener('change',(e)=>{
-    currentLineHeight=e.target.value;
-    applyReaderSettings();
-    if(virtualReader)virtualReader.changeLineHeight(currentLineHeight);
-    saveSettings();
-  });
+  const lineHeightSelect=$('lineHeightSelect');
+  if(lineHeightSelect)lineHeightSelect.addEventListener('change',(e)=>{currentLineHeight=e.target.value;applyReaderSettings();if(virtualReader)virtualReader.changeLineHeight(currentLineHeight);saveSettings();});
 
-  // 主题
-  document.getElementById('themeLight').addEventListener('click',()=>{currentTheme='light';applyReaderSettings();saveSettings();});
-  document.getElementById('themeDark').addEventListener('click',()=>{currentTheme='dark';applyReaderSettings();saveSettings();});
-  document.getElementById('themeSepia').addEventListener('click',()=>{currentTheme='sepia';applyReaderSettings();saveSettings();});
+  const themeLight=$('themeLight');if(themeLight)themeLight.addEventListener('click',()=>{currentTheme='light';applyReaderSettings();saveSettings();});
+  const themeDark=$('themeDark');if(themeDark)themeDark.addEventListener('click',()=>{currentTheme='dark';applyReaderSettings();saveSettings();});
+  const themeSepia=$('themeSepia');if(themeSepia)themeSepia.addEventListener('click',()=>{currentTheme='sepia';applyReaderSettings();saveSettings();});
 
   // ====== 页码导航 ======
-  document.getElementById('prevPageBtn').addEventListener('click',()=>{if(virtualReader)virtualReader.jumpToPage(virtualReader.cur-1);updatePageInfo();updateReadingProgressFloat();});
-  document.getElementById('nextPageBtn').addEventListener('click',()=>{if(virtualReader)virtualReader.jumpToPage(virtualReader.cur+1);updatePageInfo();updateReadingProgressFloat();});
-  document.getElementById('pageJumpInput').addEventListener('change',(e)=>{if(!virtualReader)return;const p=parseInt(e.target.value)-1;if(p>=0&&p<virtualReader.total)virtualReader.jumpToPage(p);e.target.value=(virtualReader.cur+1);updatePageInfo();updateReadingProgressFloat();});
-  function updatePageInfo(){if(!virtualReader)return;const c=virtualReader.cur+1,t=virtualReader.total;document.getElementById('pageInfoText').textContent=`${c}/${t}`;document.getElementById('pageJumpInput').value=c;document.getElementById('pageJumpInput').max=t;}
+  const prevPageBtn=$('prevPageBtn');if(prevPageBtn)prevPageBtn.addEventListener('click',()=>{if(virtualReader)virtualReader.jumpToPage(virtualReader.cur-1);updatePageInfo();updateReadingProgressFloat();});
+  const nextPageBtn=$('nextPageBtn');if(nextPageBtn)nextPageBtn.addEventListener('click',()=>{if(virtualReader)virtualReader.jumpToPage(virtualReader.cur+1);updatePageInfo();updateReadingProgressFloat();});
+  const pageJumpInput=$('pageJumpInput');if(pageJumpInput)pageJumpInput.addEventListener('change',(e)=>{if(!virtualReader)return;const p=parseInt(e.target.value)-1;if(p>=0&&p<virtualReader.total)virtualReader.jumpToPage(p);e.target.value=(virtualReader.cur+1);updatePageInfo();updateReadingProgressFloat();});
+  function updatePageInfo(){if(!virtualReader)return;const c=virtualReader.cur+1,t=virtualReader.total;setText('pageInfoText',c+'/'+t);const pji=$('pageJumpInput');if(pji){pji.value=c;pji.max=t;}}
 
-  // ====== 统计 ======
-  function updateReadingStats(){if(!virtualReader)return;const w=virtualReader.totalWords,r=Math.ceil(w/400);document.getElementById('wordCount').textContent=`字数：${w}`;document.getElementById('readTime').textContent=`约${r}分钟`;document.getElementById('totalWordsInfo').textContent=`${w}字`;}
+  // ====== 统计（安全访问） ======
+  function updateReadingStats(){
+    if(!virtualReader)return;
+    const w=virtualReader.totalWords,r=Math.ceil(w/400);
+    setText('totalWordsInfo',w+'字');
+    // wordCount / readTime 可能在设置栏中不存在，安全跳过
+    setText('wordCount','字数：'+w);
+    setText('readTime','约'+r+'分钟');
+  }
 
   function updateReadingProgressFloat(){
     if(!virtualReader)return;const info=virtualReader.onScroll();if(!info)return;
     const pct=Math.round(info.progress*100),circ=2*Math.PI*17;
-    document.getElementById('progressRingFg').style.strokeDashoffset=circ*(1-info.progress);
-    document.getElementById('progressRingText').textContent=pct+'%';
-    document.getElementById('progressLabel').textContent=`第${info.page}/${info.total}页 ${pct}%`;
-    document.getElementById('positionInfo').textContent=pct+'%';
-    document.getElementById('wordsReadInfo').textContent=`${info.wordsRead} / ${info.totalWords}字`;
-    document.getElementById('remainTimeInfo').textContent=`剩${Math.ceil((info.totalWords-info.wordsRead)/400)}分钟`;
-    document.getElementById('pageInfoText').textContent=`${info.page}/${info.total}`;
+    const ring=$('progressRingFg');if(ring)ring.style.strokeDashoffset=circ*(1-info.progress);
+    setText('progressRingText',pct+'%');
+    setText('progressLabel','第'+info.page+'/'+info.total+'页 '+pct+'%');
+    setText('positionInfo',pct+'%');
+    setText('wordsReadInfo',info.wordsRead+' / '+info.totalWords+'字');
+    setText('remainTimeInfo','剩'+Math.ceil((info.totalWords-info.wordsRead)/400)+'分钟');
+    setText('pageInfoText',info.page+'/'+info.total);
   }
 
-  // passive scroll listener
   let scrollTick=false;
-  document.getElementById('readerContent').addEventListener('scroll',()=>{if(scrollTick)return;scrollTick=true;requestAnimationFrame(()=>{updateReadingProgressFloat();scrollTick=false;});},{passive:true});
+  const readerContent=$('readerContent');
+  if(readerContent)readerContent.addEventListener('scroll',()=>{if(scrollTick)return;scrollTick=true;requestAnimationFrame(()=>{updateReadingProgressFloat();scrollTick=false;});},{passive:true});
 
   // ====== 会话计时器 ======
-  function startSessionTimer(){sessionStartTime=Date.now();if(sessionTimerInterval)clearInterval(sessionTimerInterval);sessionTimerInterval=setInterval(()=>{const el=Math.floor((Date.now()-sessionStartTime)/1000);document.getElementById('sessionTimer').textContent=`${Math.floor(el/60)}:${String(el%60).padStart(2,'0')}`;},1000);}
+  function startSessionTimer(){sessionStartTime=Date.now();if(sessionTimerInterval)clearInterval(sessionTimerInterval);sessionTimerInterval=setInterval(()=>{const el=Math.floor((Date.now()-sessionStartTime)/1000);setText('sessionTimer',Math.floor(el/60)+':'+String(el%60).padStart(2,'0'));},1000);}
   function stopSessionTimer(){if(sessionTimerInterval){clearInterval(sessionTimerInterval);sessionTimerInterval=null;}sessionStartTime=null;}
 
   // ====== 目录 ======
-  document.getElementById('tocBtn').addEventListener('click',()=>{
+  const tocBtn=$('tocBtn');
+  if(tocBtn)tocBtn.addEventListener('click',()=>{
     if(!tocHeadings.length){showToast('未检测到章节标题','warning');return;}
     let html='';
-    tocHeadings.forEach(h=>{html+=`<div class="toc-item" data-page="${h.page}" style="padding-left:${(h.level-1)*16}px">${escapeHtml(h.text)} <span style="font-size:.7rem;color:var(--fg2)">P${h.page+1}</span></div>`;});
+    tocHeadings.forEach(h=>{html+='<div class="toc-item" data-page="'+h.page+'" style="padding-left:'+(h.level-1)*16+'px">'+escapeHtml(h.text)+' <span style="font-size:.7rem;color:var(--fg2)">P'+(h.page+1)+'</span></div>';});
     showModal('目录',html);
     document.querySelectorAll('.toc-item').forEach(item=>{item.addEventListener('click',()=>{if(virtualReader)virtualReader.jumpToPage(parseInt(item.dataset.page));closeModal();updatePageInfo();});});
   });
 
   // ====== 书签 ======
-  document.getElementById('bookmarkBtn').addEventListener('click',async()=>{
+  const bookmarkBtn=$('bookmarkBtn');
+  if(bookmarkBtn)bookmarkBtn.addEventListener('click',async()=>{
     if(!currentDocId||!currentDocMeta||!virtualReader)return;
     const info=virtualReader.onScroll();const progress=info?info.progress:0;const page=info?info.page:1;
     const note=prompt('书签备注（可选）');
     currentDocMeta.bookmarks=currentDocMeta.bookmarks||[];
     currentDocMeta.bookmarks.push({progress,note:note||'',time:Date.now(),page});
     try{await apiRequest('POST','/reader/update',{id:currentDocId,bookmarks:currentDocMeta.bookmarks});showToast('书签已保存','success');
-      showModal('书签',currentDocMeta.bookmarks.map((b,i)=>`<div class="bookmark-item"><span>P${b.page||1} · ${Math.round(b.progress*100)}%</span><span>${escapeHtml(b.note||'无备注')}</span><button onclick="jumpToBookmark(${i})">跳转</button></div>`).join(''));
+      showModal('书签',currentDocMeta.bookmarks.map((b,i)=>'<div class="bookmark-item"><span>P'+(b.page||1)+' · '+Math.round(b.progress*100)+'%</span><span>'+escapeHtml(b.note||'无备注')+'</span><button onclick="jumpToBookmark('+i+')">跳转</button></div>').join(''));
     }catch(err){showToast('保存书签失败：'+err.message,'error');}
   });
   window.jumpToBookmark=function(i){if(!currentDocMeta||!currentDocMeta.bookmarks[i]||!virtualReader)return;virtualReader.jumpToProgress(currentDocMeta.bookmarks[i].progress);closeModal();updatePageInfo();};
 
   // ====== 全文搜索 ======
-  document.getElementById('searchDocBtn').addEventListener('click',()=>{
+  const searchDocBtn=$('searchDocBtn');
+  if(searchDocBtn)searchDocBtn.addEventListener('click',()=>{
     if(!virtualReader)return;const kw=prompt('输入搜索关键词：');if(!kw)return;
     const results=virtualReader.search(kw,200);
     if(!results.length){showToast('未找到匹配项','warning');return;}
-    showToast(`共找到 ${results.length} 处匹配`,'info');
-    let html=`<div style="font-size:.8rem;color:var(--fg2);margin-bottom:8px">${results.length} 处匹配</div>`;
-    results.forEach((r,i)=>{const ctx=escapeHtml(r.ctx).replace(new RegExp(escapeRegex(kw)),m=>`<mark>${m}</mark>`);html+=`<div class="search-result-item" data-page="${r.page}"><div>${i+1}.</div><div class="search-result-context">${ctx}</div><div class="search-result-page">第 ${r.page+1} 页</div></div>`;});
+    showToast('共找到 '+results.length+' 处匹配','info');
+    let html='<div style="font-size:.8rem;color:var(--fg2);margin-bottom:8px">'+results.length+' 处匹配</div>';
+    results.forEach((r,i)=>{const ctx=escapeHtml(r.ctx).replace(new RegExp(escapeRegex(kw)),m=>'<mark>'+m+'</mark>');html+='<div class="search-result-item" data-page="'+r.page+'"><div>'+(i+1)+'.</div><div class="search-result-context">'+ctx+'</div><div class="search-result-page">第 '+(r.page+1)+' 页</div></div>';});
     showModal('搜索结果',html);
-    document.querySelectorAll('.search-result-item').forEach(item=>{item.addEventListener('click',()=>{const p=parseInt(item.dataset.page);if(virtualReader)virtualReader.jumpToPage(p);closeModal();updatePageInfo();updateReadingProgressFloat();showToast(`已跳转到第 ${p+1} 页`,'info',1500);});});
+    document.querySelectorAll('.search-result-item').forEach(item=>{item.addEventListener('click',()=>{const p=parseInt(item.dataset.page);if(virtualReader)virtualReader.jumpToPage(p);closeModal();updatePageInfo();updateReadingProgressFloat();showToast('已跳转到第 '+(p+1)+' 页','info',1500);});});
   });
 
   // ====== 弹窗 ======
-  function showModal(title,contentHTML){document.getElementById('modalContainer').innerHTML=`<div class="modal"><div class="modal-card"><div class="modal-header"><span class="modal-title">${escapeHtml(title)}</span><button class="modal-close" onclick="closeModal()">×</button></div><div class="modal-body">${contentHTML}</div></div></div>`;}
-  window.closeModal=function(){document.getElementById('modalContainer').innerHTML='';};
+  function showModal(title,contentHTML){const mc=$('modalContainer');if(!mc)return;mc.innerHTML='<div class="modal"><div class="modal-card"><div class="modal-header"><span class="modal-title">'+escapeHtml(title)+'</span><button class="modal-close" onclick="closeModal()">×</button></div><div class="modal-body">'+contentHTML+'</div></div></div>';}
+  window.closeModal=function(){const mc=$('modalContainer');if(mc)mc.innerHTML='';};
 
   // ====== 工具栏 ======
-  document.getElementById('searchInput').addEventListener('input',e=>{currentSearchTerm=e.target.value.trim();applyFiltersAndRender();});
-  document.getElementById('sortSelect').addEventListener('change',e=>{currentSort=e.target.value;applyFiltersAndRender();});
-  document.getElementById('categoryFilter').addEventListener('change',e=>{currentCategory=e.target.value;applyFiltersAndRender();});
-  document.getElementById('trashBtn').addEventListener('click',()=>{if(confirm('清空回收站？')){apiRequest('POST','/reader/empty-trash').then(()=>{showToast('回收站已清空','success');loadLibrary();}).catch(err=>showToast('清空失败：'+err.message,'error'));}});
-  document.getElementById('deleteDocBtn').addEventListener('click',async()=>{if(!currentDocId)return;if(confirm('确定将此文档移入回收站吗？')){try{await apiRequest('DELETE','/reader/delete?id='+encodeURIComponent(currentDocId));showToast('已移入回收站','success');closeReader();}catch(err){showToast('删除失败：'+err.message,'error');}}});
+  const searchInput=$('searchInput');if(searchInput)searchInput.addEventListener('input',e=>{currentSearchTerm=e.target.value.trim();applyFiltersAndRender();});
+  const sortSelect=$('sortSelect');if(sortSelect)sortSelect.addEventListener('change',e=>{currentSort=e.target.value;applyFiltersAndRender();});
+  const categoryFilter=$('categoryFilter');if(categoryFilter)categoryFilter.addEventListener('change',e=>{currentCategory=e.target.value;applyFiltersAndRender();});
+  const trashBtn=$('trashBtn');if(trashBtn)trashBtn.addEventListener('click',()=>{if(confirm('清空回收站？')){apiRequest('POST','/reader/empty-trash').then(()=>{showToast('回收站已清空','success');loadLibrary();}).catch(err=>showToast('清空失败：'+err.message,'error'));}});
+  const deleteDocBtn=$('deleteDocBtn');if(deleteDocBtn)deleteDocBtn.addEventListener('click',async()=>{if(!currentDocId)return;if(confirm('确定将此文档移入回收站吗？')){try{await apiRequest('DELETE','/reader/delete?id='+encodeURIComponent(currentDocId));showToast('已移入回收站','success');closeReader();}catch(err){showToast('删除失败：'+err.message,'error');}}});
 
   // ====== 工具函数 ======
   function escapeHtml(s){if(s==null)return'';return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);}
