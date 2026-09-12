@@ -20,7 +20,7 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
 /* ====== 全局顶部加载进度条 ====== */
 #globalLoader{position:fixed;top:0;left:0;height:3px;width:0;z-index:9999;background:linear-gradient(90deg,var(--accent),var(--info));border-radius:0 3px 3px 0;transition:width .3s var(--ease);box-shadow:0 0 8px var(--accent)}
 #globalLoader.loading{width:30vw;animation:loaderPulse 1.5s ease-in-out infinite}
-#globalLoader.complete{width:100vw;transition:width .4s var(--ease);opacity:0;transition:width .4s var(--ease),opacity .4s ease .2s}
+#globalLoader.complete{width:100vw;transition:width .4s var(--ease),opacity .4s ease .2s;opacity:0}
 @keyframes loaderPulse{0%,100%{opacity:.5}50%{opacity:1}}
 
 /* ====== Toast 通知 ====== */
@@ -33,7 +33,7 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
 @keyframes toastOut{to{transform:translateX(120%);opacity:0}}
 
 /* ====== 上传进度面板 ====== */
-.upload-panel{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);padding:12px 16px;z-index:50;display:none;flex-direction:column;gap:8px;max-height:40vh;overflow-y:auto}
+.upload-panel{position:fixed;bottom:28px;left:0;right:0;background:var(--card);border-top:1px solid var(--border);padding:12px 16px;z-index:50;display:none;flex-direction:column;gap:8px;max-height:40vh;overflow-y:auto}
 .upload-panel.active{display:flex;animation:slideUp .3s var(--ease)}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .upload-panel-header{display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:.9rem}
@@ -59,7 +59,7 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
 .status-item{display:flex;align-items:center;gap:4px}
 .status-divider{width:1px;height:12px;background:var(--border)}
 
-/* ====== 原有样式 ====== */
+/* ====== 顶部栏 ====== */
 .topbar{position:fixed;top:0;left:0;right:0;height:56px;background:var(--card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;z-index:10;gap:8px}
 .topbar-title{font-size:1.2rem;font-weight:600;margin-left:4px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .topbar-btn{background:none;border:none;color:var(--accent);font-size:1rem;cursor:pointer;padding:8px;border-radius:8px}
@@ -83,14 +83,19 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
 .reader-mode{position:fixed;inset:0;background:var(--bg);z-index:20;display:flex;flex-direction:column}
 .reader-topbar{height:56px;display:flex;align-items:center;padding:0 8px;border-bottom:1px solid var(--border);background:var(--card);gap:4px}
 .reader-title{flex:1;text-align:center;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 8px}
-.reader-content{flex:1;overflow-y:auto;padding:20px 16px 44px;white-space:pre-wrap;word-break:break-word;font-size:1rem;line-height:1.8}
+
+/* ====== 阅读内容区 ====== */
+.reader-content{flex:1;overflow-y:auto;padding:20px 16px 8px;white-space:pre-wrap;word-break:break-word;font-size:1rem;line-height:1.8;-webkit-overflow-scrolling:touch;contain:content}
 .reader-content.markdown{white-space:normal}
-.reader-content .md-content{max-width:800px;margin:0 auto}
-.reader-settings{position:fixed;bottom:28px;left:0;right:0;background:var(--card);border-top:1px solid var(--border);padding:8px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;z-index:21}
+.vpage{max-width:800px;margin:0 auto 8px}
+.vpage-spacer{width:100%;pointer-events:none}
+
+/* ====== 阅读底部设置栏 ====== */
+.reader-settings{background:var(--card);border-top:1px solid var(--border);padding:8px 12px;display:flex;gap:8px;align-items:center;justify-content:space-between;z-index:21;flex-wrap:wrap}
 .setting-group{display:flex;gap:8px;align-items:center}
 .setting-btn{border:1px solid var(--border);background:var(--bg2);color:var(--fg);padding:6px 12px;border-radius:8px;font-size:.85rem;cursor:pointer}
 .setting-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-.font-size-input{width:60px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:4px;background:var(--bg2);color:var(--fg)}
+.font-size-input{width:50px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:4px;background:var(--bg2);color:var(--fg)}
 .empty-state{text-align:center;color:var(--fg2);padding:40px 0}
 .loading{text-align:center;color:var(--fg2);padding:20px}
 .toolbar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
@@ -102,7 +107,6 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
 .modal-close{background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--fg2)}
 .toc-item{padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer}
 .bookmark-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
-.note-item{padding:8px 0;border-bottom:1px solid var(--border)}
 .highlight{background:yellow;color:black}
 .deleted-item{opacity:.6}
 
@@ -119,6 +123,27 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
 #readingInfoPanel{position:fixed;top:56px;left:8px;z-index:18;display:flex;flex-direction:column;gap:4px;pointer-events:none}
 .info-chip{font-size:.7rem;color:var(--fg2);background:var(--card);padding:3px 10px;border-radius:8px;border:1px solid var(--border);white-space:nowrap;display:flex;align-items:center;gap:4px}
 .info-chip .chip-icon{font-size:.75rem}
+
+/* ====== 页码导航 ====== */
+.page-nav{display:flex;align-items:center;gap:4px}
+.page-nav button{border:1px solid var(--border);background:var(--bg2);color:var(--fg);padding:4px 10px;border-radius:6px;font-size:.85rem;cursor:pointer;min-width:32px}
+.page-nav button:active{background:var(--accent-bg)}
+.page-nav input{width:45px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:3px 2px;background:var(--bg2);color:var(--fg);font-size:.8rem}
+.page-nav .page-info{font-size:.78rem;color:var(--fg2);white-space:nowrap}
+
+/* ====== 内容准备遮罩 ====== */
+#contentPrepOverlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:40;display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+#contentPrepOverlay.active{display:flex}
+.prep-spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,.3);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.prep-text{color:#fff;font-size:.9rem}
+
+/* ====== 搜索结果 ====== */
+.search-result-item{padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.search-result-item:hover{background:var(--accent-bg)}
+.search-result-context{font-size:.8rem;color:var(--fg2);margin-top:4px;word-break:break-all}
+.search-result-page{font-size:.7rem;color:var(--accent);margin-top:2px}
+mark{background:yellow;color:black;border-radius:2px}
 </style>
 </head>
 <body class="theme-light">
@@ -128,6 +153,12 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
 
 <!-- Toast 容器 -->
 <div id="toastContainer"></div>
+
+<!-- 内容准备遮罩 -->
+<div id="contentPrepOverlay">
+  <div class="prep-spinner"></div>
+  <div class="prep-text" id="prepText">正在准备内容...</div>
+</div>
 
 <!-- 上传进度面板 -->
 <div class="upload-panel" id="uploadPanel">
@@ -203,14 +234,16 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
       <input type="number" class="font-size-input" id="fontSizeInput" value="16" min="12" max="28">
       <button class="setting-btn" id="fontPlus">A+</button>
     </div>
+    <div class="page-nav">
+      <button id="prevPageBtn">◀</button>
+      <input type="number" id="pageJumpInput" min="1" value="1">
+      <span class="page-info" id="pageInfoText">1/1</span>
+      <button id="nextPageBtn">▶</button>
+    </div>
     <div class="setting-group">
       <button class="setting-btn" id="themeLight">☀️</button>
       <button class="setting-btn" id="themeDark">🌙</button>
       <button class="setting-btn" id="themeSepia">📜</button>
-    </div>
-    <div class="setting-group">
-      <span id="wordCount"></span>
-      <span id="readTime"></span>
     </div>
   </div>
 </div>
@@ -240,7 +273,6 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
 
   // ====== 配置 ======
   const API_BASE = 'https://reader.xdd2024030565.workers.dev';
-  const MAIN_SITE_URL = 'https://xdd2024030565-spec.github.io/1/';
 
   // ====== 状态 ======
   let currentDocId = null;
@@ -260,499 +292,535 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
   let activeUploads = 0;
   let totalBytesSent = 0;
   let totalBytesReceived = 0;
+  let virtualReader = null; // 虚拟分页引擎实例
+  let tocHeadings = [];     // 目录缓存
+
+  // ====================================================================
+  //  虚拟分页引擎 VirtualReader
+  //  核心：只渲染当前页±buffer页到DOM，其余用占位div撑高度
+  //  滚动时动态切换渲染的页，DOM节点恒定 ≤ 5 个
+  // ====================================================================
+  class VirtualReader {
+    constructor(rawContent, contentEl, isMarkdown, fontSize) {
+      this.raw = rawContent;
+      this.el = contentEl;
+      this.isMd = isMarkdown;
+      this.fs = fontSize || 16;
+      this.CHARS_PER_PAGE = isMarkdown ? 20000 : 6000;
+      this.BUFFER = 1;
+      this.pages = [];
+      this.total = 0;
+      this.cur = 0;
+      this.totalWords = 0;
+      this.cumH = [];       // 累积高度数组
+      this.rendered = {};   // 已渲染页 DOM 引用
+      this.rebuilding = false;
+      this._prepare();
+    }
+
+    // ---- 分页：只算偏移量，不拷贝文本 ----
+    _prepare() {
+      const len = this.raw.length;
+      let off = 0;
+      while (off < len) {
+        let end = Math.min(off + this.CHARS_PER_PAGE, len);
+        if (end < len) {
+          // 优先在段落边界切分
+          const searchFrom = Math.max(off, end - 500);
+          let bp = this.raw.lastIndexOf('\n\n', end);
+          if (bp < searchFrom) bp = this.raw.lastIndexOf('\n', end);
+          if (bp >= searchFrom) end = bp + 1;
+        }
+        const cc = end - off;
+        this.pages.push({
+          i: this.pages.length,
+          s: off, e: end, cc: cc,
+          eh: Math.max(80, cc * this.fs * 0.052),  // 估算高度
+          ah: null  // 实际高度（首次渲染后测量）
+        });
+        off = end;
+      }
+      this.total = this.pages.length;
+      this._recalcCum();
+      // 预计算字数（一次性，~200ms for 23MB）
+      this.totalWords = this.raw.replace(/\s+/g, '').length;
+    }
+
+    // ---- 重算累积高度（用于二分查找当前页） ----
+    _recalcCum() {
+      this.cumH = [0];
+      let sum = 0;
+      for (let i = 0; i < this.pages.length; i++) {
+        sum += this.pages[i].ah || this.pages[i].eh;
+        this.cumH[i + 1] = sum;
+      }
+    }
+
+    // ---- 二分查找：根据 scrollTop 找当前页 ----
+    _pageAt(scrollTop) {
+      let lo = 0, hi = this.total;
+      while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (this.cumH[mid + 1] <= scrollTop) lo = mid + 1;
+        else hi = mid;
+      }
+      return Math.min(lo, Math.max(0, this.total - 1));
+    }
+
+    // ---- 获取页文本 ----
+    _text(i) {
+      return this.raw.substring(this.pages[i].s, this.pages[i].e);
+    }
+
+    // ---- 渲染单页到 DOM ----
+    _makePage(i) {
+      const d = document.createElement('div');
+      d.className = 'vpage';
+      d.dataset.pi = i;
+      const t = this._text(i);
+      if (this.isMd) d.innerHTML = marked.parse(t);
+      else d.textContent = t;
+      return d;
+    }
+
+    // ---- 重建 DOM：占位顶 + 可见页 + 占位底 ----
+    _rebuild(center) {
+      const s = Math.max(0, center - this.BUFFER);
+      const e = Math.min(this.total - 1, center + this.BUFFER);
+
+      this.el.innerHTML = '';
+      this.rendered = {};
+
+      // 顶部占位
+      const topH = this.cumH[s];
+      if (topH > 0) {
+        const sp = document.createElement('div');
+        sp.className = 'vpage-spacer';
+        sp.style.height = topH + 'px';
+        this.el.appendChild(sp);
+      }
+
+      // 可见页
+      for (let i = s; i <= e; i++) {
+        const el = this._makePage(i);
+        this.el.appendChild(el);
+        this.rendered[i] = el;
+      }
+
+      // 底部占位
+      const botH = this.cumH[this.total] - this.cumH[e + 1];
+      if (botH > 0) {
+        const sp = document.createElement('div');
+        sp.className = 'vpage-spacer';
+        sp.style.height = botH + 'px';
+        this.el.appendChild(sp);
+      }
+
+      // 渲染后测量实际高度并修正估算
+      requestAnimationFrame(() => {
+        let changed = false;
+        for (const k in this.rendered) {
+          const i = +k;
+          const el = this.rendered[i];
+          if (el && el.offsetHeight > 0) {
+            const old = this.pages[i].ah || this.pages[i].eh;
+            const now = el.offsetHeight;
+            if (Math.abs(now - old) > 5) {
+              this.pages[i].ah = now;
+              changed = true;
+            }
+          }
+        }
+        if (changed) this._recalcCum();
+      });
+    }
+
+    // ---- 初始化 ----
+    init(progress) {
+      if (this.total === 0) return;
+      this.cur = Math.min(this.total - 1, Math.floor(progress * this.total));
+      this._rebuild(this.cur);
+      requestAnimationFrame(() => {
+        const top = this.cumH[this.cur];
+        const pp = (progress * this.total) - this.cur;
+        const ph = this.pages[this.cur].ah || this.pages[this.cur].eh;
+        this.el.scrollTop = top + pp * ph;
+      });
+    }
+
+    // ---- 滚动处理（节流由外部 rAF 控制） ----
+    onScroll() {
+      if (this.rebuilding) return null;
+      const st = this.el.scrollTop;
+      const ch = this.el.clientHeight;
+      const np = this._pageAt(st);
+
+      const s = Math.max(0, this.cur - this.BUFFER);
+      const e = Math.min(this.total - 1, this.cur + this.BUFFER);
+
+      if (np < s || np > e) {
+        // 滚出渲染范围，需要重建
+        this.rebuilding = true;
+        const saved = st;
+        this.cur = np;
+        this._rebuild(np);
+        requestAnimationFrame(() => {
+          this.el.scrollTop = saved;
+          this.rebuilding = false;
+        });
+      } else {
+        this.cur = np;
+      }
+
+      const totalH = this.cumH[this.total];
+      const prog = totalH > 0 ? Math.min(1, (st + ch) / totalH) : 0;
+      return {
+        page: this.cur + 1,
+        total: this.total,
+        progress: prog,
+        totalWords: this.totalWords,
+        wordsRead: Math.round(this.totalWords * prog)
+      };
+    }
+
+    // ---- 跳转到指定页 ----
+    jumpToPage(i) {
+      if (i < 0 || i >= this.total) return;
+      this.cur = i;
+      this._rebuild(i);
+      requestAnimationFrame(() => {
+        this.el.scrollTop = this.cumH[i];
+      });
+    }
+
+    // ---- 跳转到进度 ----
+    jumpToProgress(p) {
+      this.jumpToPage(Math.min(this.total - 1, Math.floor(p * this.total)));
+    }
+
+    // ---- 按字符偏移找页码 ----
+    _pageByChar(ci) {
+      for (let i = 0; i < this.pages.length; i++)
+        if (ci >= this.pages[i].s && ci < this.pages[i].e) return i;
+      return this.total - 1;
+    }
+
+    // ---- 全文搜索（扫描原始字符串，不碰 DOM） ----
+    search(kw, max = 200) {
+      const esc = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp(esc, 'gi');
+      const res = [];
+      let m;
+      while ((m = re.exec(this.raw)) !== null) {
+        res.push({
+          idx: m.index,
+          page: this._pageByChar(m.index),
+          ctx: this.raw.substring(
+            Math.max(0, m.index - 40),
+            m.index + kw.length + 40
+          )
+        });
+        if (res.length >= max) break;
+      }
+      return res;
+    }
+
+    // ---- 提取目录（带页码） ----
+    getTOC() {
+      const hs = [];
+      const lines = this.raw.split('\n');
+      let cOff = 0;
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (this.isMd) {
+          const m = line.match(/^(#{1,3})\s+(.*)/);
+          if (m) hs.push({ level: m[1].length, text: m[2], page: this._pageByChar(cOff) });
+        } else {
+          const m = line.match(/^(第[0-9一二三四五六七八九十百千万]+[章节卷]|Chapter\s+\d+)\s*(.*)/i);
+          if (m) hs.push({ level: 1, text: line, page: this._pageByChar(cOff) });
+        }
+        cOff += lines[i].length + 1;
+      }
+      return hs;
+    }
+
+    // ---- 字号变更后重建 ----
+    rebuildForFont(fs) {
+      this.fs = fs;
+      for (let i = 0; i < this.pages.length; i++) {
+        this.pages[i].eh = Math.max(80, this.pages[i].cc * fs * 0.052);
+        this.pages[i].ah = null;
+      }
+      this._recalcCum();
+      this._rebuild(this.cur);
+      requestAnimationFrame(() => {
+        this.el.scrollTop = this.cumH[this.cur];
+      });
+    }
+
+    // ---- 销毁 ----
+    destroy() {
+      this.el.innerHTML = '';
+      this.rendered = {};
+      this.pages = [];
+      this.raw = '';
+    }
+  }
 
   // ====== 全局加载进度条 ======
   const globalLoader = document.getElementById('globalLoader');
   let loaderTimeout = null;
-
-  function showGlobalLoader(){
-    globalLoader.classList.remove('complete');
-    globalLoader.classList.add('loading');
-    clearTimeout(loaderTimeout);
-  }
-  function hideGlobalLoader(){
-    globalLoader.classList.remove('loading');
-    globalLoader.classList.add('complete');
-    clearTimeout(loaderTimeout);
-    loaderTimeout = setTimeout(()=>{
-      globalLoader.classList.remove('complete');
-      globalLoader.style.width = '0';
-    }, 600);
-  }
+  function showGlobalLoader(){ globalLoader.classList.remove('complete'); globalLoader.classList.add('loading'); clearTimeout(loaderTimeout); }
+  function hideGlobalLoader(){ globalLoader.classList.remove('loading'); globalLoader.classList.add('complete'); clearTimeout(loaderTimeout); loaderTimeout = setTimeout(()=>{ globalLoader.classList.remove('complete'); globalLoader.style.width='0'; }, 600); }
 
   // ====== Toast 通知系统 ======
   const toastContainer = document.getElementById('toastContainer');
   const toastIcons = { success:'✅', error:'❌', info:'ℹ️', warning:'⚠️' };
-
-  function showToast(message, type='info', duration=3500){
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.innerHTML = `<span class="toast-icon">${toastIcons[type]||toastIcons.info}</span><span class="toast-msg">${escapeHtml(message)}</span>`;
-    toastContainer.appendChild(toast);
-    toast.addEventListener('click', ()=>removeToast(toast));
-    if(duration > 0){
-      setTimeout(()=>removeToast(toast), duration);
-    }
-    // 限制最多5条
-    while(toastContainer.children.length > 5){
-      removeToast(toastContainer.firstChild);
-    }
+  function showToast(msg, type='info', dur=3500){
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.innerHTML = `<span class="toast-icon">${toastIcons[type]||toastIcons.info}</span><span class="toast-msg">${escapeHtml(msg)}</span>`;
+    toastContainer.appendChild(t);
+    t.addEventListener('click', ()=>removeToast(t));
+    if(dur>0) setTimeout(()=>removeToast(t), dur);
+    while(toastContainer.children.length > 5) removeToast(toastContainer.firstChild);
   }
-  function removeToast(toast){
-    if(!toast || !toast.parentNode) return;
-    toast.classList.add('removing');
-    setTimeout(()=>{ if(toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
-  }
+  function removeToast(t){ if(!t||!t.parentNode) return; t.classList.add('removing'); setTimeout(()=>{ if(t.parentNode) t.parentNode.removeChild(t); }, 300); }
 
-  // ====== API 封装（带进度和延迟测量） ======
+  // ====== API 封装 ======
   async function apiRequest(method, path, body, onProgress){
-    showGlobalLoader();
-    setNetStatus('loading');
-    const startTime = performance.now();
-
-    try{
+    showGlobalLoader(); setNetStatus('loading');
+    const t0 = performance.now();
+    try {
       let res;
       if(onProgress && body){
-        // 使用 XMLHttpRequest 支持上传进度
         res = await new Promise((resolve, reject)=>{
           const xhr = new XMLHttpRequest();
           xhr.open(method, API_BASE + path);
-          xhr.setRequestHeader('Content-Type', 'application/json');
-          xhr.upload.onprogress = (e)=>{
-            if(e.lengthComputable){
-              onProgress(e.loaded, e.total, e.timeStamp);
-              totalBytesSent += e.loaded;
-            }
-          };
+          xhr.setRequestHeader('Content-Type','application/json');
+          xhr.upload.onprogress = (e)=>{ if(e.lengthComputable){ onProgress(e.loaded, e.total); totalBytesSent += e.loaded; } };
           xhr.onload = ()=>{
             totalBytesReceived += parseInt(xhr.getResponseHeader('Content-Length')||0);
-            if(xhr.status >= 200 && xhr.status < 300){
-              if(xhr.status === 204) resolve(null);
-              else resolve(JSON.parse(xhr.responseText));
-            } else {
-              let err;
-              try{ err = JSON.parse(xhr.responseText); }catch(_){ err = { error: xhr.statusText }; }
-              reject(new Error(err.error || xhr.statusText));
-            }
+            if(xhr.status>=200 && xhr.status<300){ if(xhr.status===204) resolve(null); else resolve(JSON.parse(xhr.responseText)); }
+            else { let err; try{ err=JSON.parse(xhr.responseText); }catch(_){ err={error:xhr.statusText}; } reject(new Error(err.error||xhr.statusText)); }
           };
           xhr.onerror = ()=>reject(new Error('网络错误'));
           xhr.ontimeout = ()=>reject(new Error('请求超时'));
-          xhr.timeout = 60000;
+          xhr.timeout = 120000;
           xhr.send(JSON.stringify(body));
         });
       } else {
         const opts = { method, headers:{'Content-Type':'application/json'} };
         if(body) opts.body = JSON.stringify(body);
-        const fetchRes = await fetch(API_BASE + path, opts);
-        totalBytesReceived += parseInt(fetchRes.headers.get('Content-Length')||0);
-        if(!fetchRes.ok){
-          const err = await fetchRes.json().catch(()=>({error:fetchRes.statusText}));
-          throw new Error(err.error || fetchRes.statusText);
-        }
-        if(fetchRes.status === 204) res = null;
-        else res = await fetchRes.json();
+        const fr = await fetch(API_BASE + path, opts);
+        totalBytesReceived += parseInt(fr.headers.get('Content-Length')||0);
+        if(!fr.ok){ const err = await fr.json().catch(()=>({error:fr.statusText})); throw new Error(err.error||fr.statusText); }
+        if(fr.status===204) res=null; else res = await fr.json();
       }
-
-      apiLatencyValue = Math.round(performance.now() - startTime);
-      updateApiLatency();
-      setNetStatus('online');
-      hideGlobalLoader();
+      apiLatencyValue = Math.round(performance.now() - t0);
+      updateApiLatency(); setNetStatus('online'); hideGlobalLoader();
       return res;
     } catch(err){
-      apiLatencyValue = Math.round(performance.now() - startTime);
-      updateApiLatency();
-      setNetStatus(navigator.onLine ? 'online' : 'offline');
-      hideGlobalLoader();
+      apiLatencyValue = Math.round(performance.now() - t0);
+      updateApiLatency(); setNetStatus(navigator.onLine?'online':'offline'); hideGlobalLoader();
       throw err;
     }
   }
 
-  // ====== 网络状态监测 ======
-  function setNetStatus(status){
-    const dot = document.getElementById('netDot');
-    const text = document.getElementById('netStatus');
-    dot.className = 'status-dot ' + status;
-    text.textContent = status === 'online' ? '在线' : status === 'offline' ? '离线' : '加载中';
-  }
-  window.addEventListener('online', ()=>{
-    setNetStatus('online');
-    showToast('网络已恢复', 'success');
-  });
-  window.addEventListener('offline', ()=>{
-    setNetStatus('offline');
-    showToast('网络已断开，部分功能不可用', 'warning', 6000);
-  });
+  // ====== 网络状态 ======
+  function setNetStatus(s){ document.getElementById('netDot').className='status-dot '+s; document.getElementById('netStatus').textContent = s==='online'?'在线':s==='offline'?'离线':'加载中'; }
+  window.addEventListener('online', ()=>{ setNetStatus('online'); showToast('网络已恢复','success'); });
+  window.addEventListener('offline', ()=>{ setNetStatus('offline'); showToast('网络已断开，部分功能不可用','warning',6000); });
+  function updateApiLatency(){ const el=document.getElementById('apiLatency'); if(apiLatencyValue!==null){ const ic = apiLatencyValue<300?'⚡':apiLatencyValue<1000?'🔸':'🐌'; el.textContent=`${ic} ${apiLatencyValue}ms`; } }
 
-  function updateApiLatency(){
-    const el = document.getElementById('apiLatency');
-    if(apiLatencyValue !== null){
-      const icon = apiLatencyValue < 300 ? '⚡' : apiLatencyValue < 1000 ? '🔸' : '🐌';
-      el.textContent = `${icon} ${apiLatencyValue}ms`;
-    }
-  }
-
-  // ====== 底部状态栏：时钟 ======
-  function updateClock(){
-    const now = new Date();
-    const h = String(now.getHours()).padStart(2,'0');
-    const m = String(now.getMinutes()).padStart(2,'0');
-    document.getElementById('clockStatus').textContent = `${h}:${m}`;
-  }
-  setInterval(updateClock, 1000);
-  updateClock();
-
-  // ====== 底部状态栏：存储统计 ======
-  function formatBytes(bytes){
-    if(bytes < 1024) return bytes + 'B';
-    if(bytes < 1048576) return (bytes/1024).toFixed(1) + 'KB';
-    return (bytes/1048576).toFixed(1) + 'MB';
-  }
-  function updateStorageStatus(){
-    const size = totalBytesSent + totalBytesReceived;
-    const el = document.getElementById('librarySizeStatus');
-    el.textContent = `💾 ${formatBytes(size)}`;
-  }
+  // ====== 底部状态栏 ======
+  function updateClock(){ const n=new Date(); document.getElementById('clockStatus').textContent=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`; }
+  setInterval(updateClock, 1000); updateClock();
+  function formatBytes(b){ if(b<1024) return b+'B'; if(b<1048576) return (b/1024).toFixed(1)+'KB'; return (b/1048576).toFixed(1)+'MB'; }
+  function updateStorageStatus(){ document.getElementById('librarySizeStatus').textContent = `💾 ${formatBytes(totalBytesSent + totalBytesReceived)}`; }
   setInterval(updateStorageStatus, 2000);
 
   // ====== 书库渲染 ======
   async function loadLibrary(){
-    const container = document.getElementById('docListContainer');
-    container.innerHTML = '<div class="loading">⏳ 加载中...</div>';
-    try{
+    const c = document.getElementById('docListContainer');
+    c.innerHTML = '<div class="loading">⏳ 加载中...</div>';
+    try {
       docList = await apiRequest('GET', '/reader/list');
-      updateDocCountStatus();
-      applyFiltersAndRender();
+      updateDocCountStatus(); applyFiltersAndRender();
       showToast(`已加载 ${docList.length} 篇文档`, 'success', 2000);
     } catch(err){
-      container.innerHTML = `<div class="empty-state">加载失败：${escapeHtml(err.message)}</div>`;
+      c.innerHTML = `<div class="empty-state">加载失败：${escapeHtml(err.message)}</div>`;
       showToast('加载书库失败：' + err.message, 'error');
     }
   }
-
   function updateDocCountStatus(){
-    const active = docList.filter(d => !d.deleted).length;
-    const deleted = docList.filter(d => d.deleted).length;
-    document.getElementById('docCountStatus').textContent = `📚 ${active} 篇${deleted ? ` (♻️${deleted})` : ''}`;
+    const a = docList.filter(d=>!d.deleted).length;
+    const d2 = docList.filter(d=>d.deleted).length;
+    document.getElementById('docCountStatus').textContent = `📚 ${a} 篇${d2?` (♻️${d2})`:''}`;
   }
-
   function applyFiltersAndRender(){
     filteredDocs = [...docList];
-    if(currentCategory !== 'all'){
-      filteredDocs = filteredDocs.filter(d => d.category === currentCategory);
-    }
-    if(currentSearchTerm){
-      const term = currentSearchTerm.toLowerCase();
-      filteredDocs = filteredDocs.filter(d =>
-        d.title.toLowerCase().includes(term) ||
-        (d.tags && d.tags.some(t => t.toLowerCase().includes(term)))
-      );
-    }
-    filteredDocs.sort((a, b) => {
-      if(currentSort === 'title') return a.title.localeCompare(b.title);
-      return (b[currentSort] || 0) - (a[currentSort] || 0);
-    });
-    renderLibraryList(filteredDocs);
-    updateCategoryFilter();
+    if(currentCategory!=='all') filteredDocs = filteredDocs.filter(d=>d.category===currentCategory);
+    if(currentSearchTerm){ const t=currentSearchTerm.toLowerCase(); filteredDocs = filteredDocs.filter(d=>d.title.toLowerCase().includes(t)||(d.tags&&d.tags.some(x=>x.toLowerCase().includes(t)))); }
+    filteredDocs.sort((a,b)=>{ if(currentSort==='title') return a.title.localeCompare(b.title); return (b[currentSort]||0)-(a[currentSort]||0); });
+    renderLibraryList(filteredDocs); updateCategoryFilter();
   }
-
   function renderLibraryList(docs){
-    const container = document.getElementById('docListContainer');
-    if(docs.length === 0){
-      container.innerHTML = '<div class="empty-state">没有文档</div>';
-      return;
-    }
-    let html = '<ul class="doc-list">';
-    docs.forEach(doc => {
-      const progress = doc.progress ? Math.round(doc.progress * 100) + '%' : '未读';
+    const c = document.getElementById('docListContainer');
+    if(docs.length===0){ c.innerHTML='<div class="empty-state">没有文档</div>'; return; }
+    let html='<ul class="doc-list">';
+    docs.forEach(doc=>{
+      const prog = doc.progress ? Math.round(doc.progress*100)+'%' : '未读';
       const date = doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : '';
-      const deletedClass = doc.deleted ? ' deleted-item' : '';
-      const sizeInfo = doc.content ? formatBytes(new Blob([doc.content]).size) : '';
-      html += `
-        <li class="doc-item${deletedClass}" data-id="${doc.id}">
-          <div class="doc-icon">${doc.deleted ? '♻️' : '📄'}</div>
-          <div class="doc-info">
-            <div class="doc-title">${escapeHtml(doc.title)}</div>
-            <div class="doc-meta">
-              <span>${date}</span>
-              <span>${escapeHtml(doc.category || '未分类')}</span>
-              ${doc.tags && doc.tags.length ? `<span>🏷️ ${doc.tags.map(t=>escapeHtml(t)).join(', ')}</span>` : ''}
-              ${sizeInfo ? `<span>📦 ${sizeInfo}</span>` : ''}
-              <span class="doc-progress">${progress}</span>
-            </div>
-          </div>
-          <div class="doc-actions">
-            ${doc.deleted ?
-              `<button class="restore-btn" data-id="${doc.id}">恢复</button>
-               <button class="purge-btn" data-id="${doc.id}">彻底删除</button>` :
-              `<button class="del-btn" data-id="${doc.id}">删除</button>`}
-          </div>
-        </li>
-      `;
+      const dc = doc.deleted ? ' deleted-item' : '';
+      const sz = doc.content ? formatBytes(new Blob([doc.content]).size) : '';
+      html += `<li class="doc-item${dc}" data-id="${doc.id}"><div class="doc-icon">${doc.deleted?'♻️':'📄'}</div><div class="doc-info"><div class="doc-title">${escapeHtml(doc.title)}</div><div class="doc-meta"><span>${date}</span><span>${escapeHtml(doc.category||'未分类')}</span>${doc.tags&&doc.tags.length?`<span>🏷️ ${doc.tags.map(t=>escapeHtml(t)).join(', ')}</span>`:''}${sz?`<span>📦 ${sz}</span>`:''}<span class="doc-progress">${prog}</span></div></div><div class="doc-actions">${doc.deleted?`<button class="restore-btn" data-id="${doc.id}">恢复</button><button class="purge-btn" data-id="${doc.id}">彻底删除</button>`:`<button class="del-btn" data-id="${doc.id}">删除</button>`}</div></li>`;
     });
-    html += '</ul>';
-    container.innerHTML = html;
-
-    document.querySelectorAll('.doc-item').forEach(item => {
-      item.addEventListener('click', (e) => {
-        if(e.target.classList.contains('del-btn') || e.target.classList.contains('restore-btn') || e.target.classList.contains('purge-btn')) return;
-        if(item.classList.contains('deleted-item')){
-          showToast('该文档在回收站中，请先恢复', 'warning');
-          return;
-        }
-        openReader(item.dataset.id);
-      });
+    html+='</ul>'; c.innerHTML=html;
+    c.querySelectorAll('.doc-item').forEach(item=>{
+      item.addEventListener('click',(e)=>{ if(e.target.classList.contains('del-btn')||e.target.classList.contains('restore-btn')||e.target.classList.contains('purge-btn')) return; if(item.classList.contains('deleted-item')){ showToast('该文档在回收站中，请先恢复','warning'); return; } openReader(item.dataset.id); });
     });
-    document.querySelectorAll('.del-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const id = btn.dataset.id;
-        if(confirm('确定将此文档移入回收站吗？')){
-          try{ await apiRequest('DELETE', '/reader/delete?id=' + encodeURIComponent(id)); showToast('已移入回收站', 'success'); await loadLibrary(); }
-          catch(err){ showToast('删除失败：' + err.message, 'error'); }
-        }
-      });
-    });
-    document.querySelectorAll('.restore-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const id = btn.dataset.id;
-        try{ await apiRequest('POST', '/reader/restore', { id }); showToast('文档已恢复', 'success'); await loadLibrary(); }
-        catch(err){ showToast('恢复失败：' + err.message, 'error'); }
-      });
-    });
-    document.querySelectorAll('.purge-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const id = btn.dataset.id;
-        if(confirm('彻底删除该文档？此操作不可撤销。')){
-          try{ await apiRequest('POST', '/reader/empty-trash'); showToast('已彻底删除', 'success'); await loadLibrary(); }
-          catch(err){ showToast('彻底删除失败：' + err.message, 'error'); }
-        }
-      });
-    });
+    c.querySelectorAll('.del-btn').forEach(b=>b.addEventListener('click',async(e)=>{ e.stopPropagation(); if(confirm('确定将此文档移入回收站吗？')){ try{ await apiRequest('DELETE','/reader/delete?id='+encodeURIComponent(b.dataset.id)); showToast('已移入回收站','success'); await loadLibrary(); }catch(err){ showToast('删除失败：'+err.message,'error'); } } }));
+    c.querySelectorAll('.restore-btn').forEach(b=>b.addEventListener('click',async(e)=>{ e.stopPropagation(); try{ await apiRequest('POST','/reader/restore',{id:b.dataset.id}); showToast('文档已恢复','success'); await loadLibrary(); }catch(err){ showToast('恢复失败：'+err.message,'error'); } }));
+    c.querySelectorAll('.purge-btn').forEach(b=>b.addEventListener('click',async(e)=>{ e.stopPropagation(); if(confirm('彻底删除该文档？此操作不可撤销。')){ try{ await apiRequest('POST','/reader/empty-trash'); showToast('已彻底删除','success'); await loadLibrary(); }catch(err){ showToast('彻底删除失败：'+err.message,'error'); } } }));
   }
-
   function updateCategoryFilter(){
-    const select = document.getElementById('categoryFilter');
-    const categories = new Set(docList.map(d => d.category || '未分类'));
-    let html = '<option value="all">全部分类</option>';
-    categories.forEach(cat => {
-      html += `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`;
-    });
-    select.innerHTML = html;
-    select.value = currentCategory;
+    const sel=document.getElementById('categoryFilter');
+    const cats=new Set(docList.map(d=>d.category||'未分类'));
+    let h='<option value="all">全部分类</option>';
+    cats.forEach(c=>h+=`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`);
+    sel.innerHTML=h; sel.value=currentCategory;
   }
 
   // ====== 导入（带上传进度） ======
-  const importArea = document.getElementById('importArea');
-  const fileInput = document.getElementById('fileInput');
-
-  // 拖放支持
-  importArea.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    importArea.classList.add('dragover');
-  });
-  importArea.addEventListener('dragleave', () => {
-    importArea.classList.remove('dragover');
-  });
-  importArea.addEventListener('drop', (e) => {
-    e.preventDefault();
-    importArea.classList.remove('dragover');
-    handleFiles(e.dataTransfer.files);
-  });
-
-  fileInput.addEventListener('change', (e) => {
-    handleFiles(e.target.files);
-  });
+  const importArea=document.getElementById('importArea');
+  const fileInput=document.getElementById('fileInput');
+  importArea.addEventListener('dragover',e=>{e.preventDefault();importArea.classList.add('dragover');});
+  importArea.addEventListener('dragleave',()=>importArea.classList.remove('dragover'));
+  importArea.addEventListener('drop',e=>{e.preventDefault();importArea.classList.remove('dragover');handleFiles(e.dataTransfer.files);});
+  fileInput.addEventListener('change',e=>handleFiles(e.target.files));
 
   async function handleFiles(files){
     if(!files.length) return;
-    const uploadPanel = document.getElementById('uploadPanel');
-    const uploadTasks = document.getElementById('uploadTasks');
-    uploadPanel.classList.add('active');
-    activeUploads = files.length;
-
-    let successCount = 0;
-    let failCount = 0;
-
-    for(let i = 0; i < files.length; i++){
-      const file = files[i];
-      const taskId = 'upload-' + Date.now() + '-' + i;
-      const taskEl = document.createElement('div');
-      taskEl.className = 'upload-task';
-      taskEl.id = taskId;
-      taskEl.innerHTML = `
-        <div class="upload-task-info">
-          <span class="upload-task-name">${escapeHtml(file.name)}</span>
-          <span class="upload-task-status">等待中...</span>
-        </div>
-        <div class="upload-bar-wrap"><div class="upload-bar uploading" style="width:0"></div></div>
-        <div class="upload-task-detail">
-          <span class="upload-size">0 / ${formatBytes(file.size)}</span>
-          <span class="upload-speed"></span>
-          <span class="upload-eta"></span>
-        </div>
-      `;
-      uploadTasks.appendChild(taskEl);
-
-      const bar = taskEl.querySelector('.upload-bar');
-      const statusEl = taskEl.querySelector('.upload-task-status');
-      const sizeEl = taskEl.querySelector('.upload-size');
-      const speedEl = taskEl.querySelector('.upload-speed');
-      const etaEl = taskEl.querySelector('.upload-eta');
-
+    const panel=document.getElementById('uploadPanel');
+    const tasks=document.getElementById('uploadTasks');
+    panel.classList.add('active'); activeUploads=files.length;
+    let ok=0, fail=0;
+    for(let i=0;i<files.length;i++){
+      const file=files[i];
+      const tEl=document.createElement('div');
+      tEl.className='upload-task';
+      tEl.innerHTML=`<div class="upload-task-info"><span class="upload-task-name">${escapeHtml(file.name)}</span><span class="upload-task-status">等待中...</span></div><div class="upload-bar-wrap"><div class="upload-bar uploading" style="width:0"></div></div><div class="upload-task-detail"><span class="upload-size">0 / ${formatBytes(file.size)}</span><span class="upload-speed"></span><span class="upload-eta"></span></div>`;
+      tasks.appendChild(tEl);
+      const bar=tEl.querySelector('.upload-bar'), stEl=tEl.querySelector('.upload-task-status'), szEl=tEl.querySelector('.upload-size'), spEl=tEl.querySelector('.upload-speed'), etEl=tEl.querySelector('.upload-eta');
       try{
-        // 先读取文件内容
-        statusEl.textContent = '读取中...';
-        const content = await readFileAsText(file);
-        const ext = file.name.split('.').pop().toLowerCase();
-        const isMarkdown = ext === 'md' || ext === 'markdown';
-        const title = file.name.replace(/\.[^.]+$/, '') || '未命名';
-
-        // 上传到服务器（带进度）
-        statusEl.textContent = '上传中...';
-        let lastTime = performance.now();
-        let lastLoaded = 0;
-
-        await apiRequest('POST', '/reader/import', {
-          title, content, category: '未分类', tags: []
-        }, (loaded, total, timeStamp) => {
-          const pct = Math.round((loaded / total) * 100);
-          bar.style.width = pct + '%';
-          sizeEl.textContent = `${formatBytes(loaded)} / ${formatBytes(total)}`;
-
-          // 计算速度
-          const now = performance.now();
-          const dt = (now - lastTime) / 1000;
-          if(dt > 0.3){
-            const dl = loaded - lastLoaded;
-            const speed = dl / dt;
-            speedEl.textContent = `${formatBytes(Math.round(speed))}/s`;
-
-            // 预估剩余时间
-            if(speed > 0){
-              const remaining = (total - loaded) / speed;
-              etaEl.textContent = `剩余 ${Math.ceil(remaining)}s`;
-            }
-            lastTime = now;
-            lastLoaded = loaded;
-          }
-
-          if(pct >= 100){
-            statusEl.textContent = '处理中...';
-            bar.classList.remove('uploading');
-            bar.classList.add('done');
-          }
+        stEl.textContent='读取中...';
+        const content=await readFileAsText(file);
+        const ext=file.name.split('.').pop().toLowerCase();
+        const title=file.name.replace(/\.[^.]+$/,'')||'未命名';
+        stEl.textContent='上传中...';
+        let lt=performance.now(), ll=0;
+        await apiRequest('POST','/reader/import',{title,content,category:'未分类',tags:[]},(loaded,total)=>{
+          const pct=Math.round((loaded/total)*100);
+          bar.style.width=pct+'%';
+          szEl.textContent=`${formatBytes(loaded)} / ${formatBytes(total)}`;
+          const now=performance.now(); const dt=(now-lt)/1000;
+          if(dt>0.3){ const sp=(loaded-ll)/dt; spEl.textContent=`${formatBytes(Math.round(sp))}/s`; if(sp>0) etEl.textContent=`剩余 ${Math.ceil((total-loaded)/sp)}s`; lt=now; ll=loaded; }
+          if(pct>=100){ stEl.textContent='处理中...'; bar.classList.remove('uploading'); bar.classList.add('done'); }
         });
-
-        statusEl.textContent = '✅ 完成';
-        bar.classList.remove('uploading');
-        bar.classList.add('done');
-        bar.style.width = '100%';
-        successCount++;
-        totalBytesSent += file.size;
-      } catch(err){
-        statusEl.textContent = '❌ ' + err.message;
-        bar.classList.remove('uploading');
-        bar.classList.add('error');
-        failCount++;
-        showToast(`导入 ${file.name} 失败：${err.message}`, 'error');
-      }
+        stEl.textContent='✅ 完成'; bar.classList.remove('uploading'); bar.classList.add('done'); bar.style.width='100%'; ok++; totalBytesSent+=file.size;
+      }catch(err){ stEl.textContent='❌ '+err.message; bar.classList.remove('uploading'); bar.classList.add('error'); fail++; showToast(`导入 ${file.name} 失败：${err.message}`,'error'); }
       activeUploads--;
     }
-
-    fileInput.value = '';
-
-    // 总结
-    if(successCount > 0){
-      showToast(`成功导入 ${successCount} 个文件${failCount ? `，${failCount} 个失败` : ''}`, successCount > 0 ? 'success' : 'warning');
-    }
-
-    // 延迟关闭面板
-    setTimeout(() => {
-      if(activeUploads === 0){
-        uploadPanel.classList.remove('active');
-        uploadTasks.innerHTML = '';
-      }
-    }, 3000);
-
+    fileInput.value='';
+    if(ok>0) showToast(`成功导入 ${ok} 个文件${fail?`，${fail} 个失败`:''}`,'success');
+    setTimeout(()=>{ if(activeUploads===0){ panel.classList.remove('active'); tasks.innerHTML=''; } }, 3000);
     await loadLibrary();
   }
+  function readFileAsText(file){ return new Promise((resolve,reject)=>{ const r=new FileReader(); r.onload=e=>resolve(e.target.result); r.onerror=()=>reject(r.error); r.readAsText(file); }); }
 
-  function readFileAsText(file){
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target.result);
-      reader.onerror = () => reject(reader.error);
-      reader.readAsText(file);
-    });
-  }
-
-  // ====== 打开阅读器 ======
+  // ====== 打开阅读器（虚拟分页） ======
   async function openReader(id){
     currentDocId = id;
-    showGlobalLoader();
-    try{
+    const prepOverlay = document.getElementById('contentPrepOverlay');
+    const prepText = document.getElementById('prepText');
+    prepText.textContent = '正在下载文档...';
+    prepOverlay.classList.add('active');
+
+    try {
       const doc = await apiRequest('GET', '/reader/get?id=' + encodeURIComponent(id));
       currentDocMeta = doc;
-      currentDocContent = doc.content;
-      currentDocType = doc.title.endsWith('.md') || doc.title.endsWith('.markdown') ? 'markdown' : 'txt';
+      currentDocContent = doc.content || '';
+      currentDocType = (doc.title.endsWith('.md') || doc.title.endsWith('.markdown')) ? 'markdown' : 'txt';
 
       document.getElementById('readerTitle').textContent = doc.title;
+
+      // 让遮罩渲染后再做重计算
+      await new Promise(r => setTimeout(r, 30));
+
+      prepText.textContent = '正在分页处理...';
+      await new Promise(r => setTimeout(r, 30));
+
+      // 创建虚拟分页引擎
       const contentEl = document.getElementById('readerContent');
       contentEl.innerHTML = '';
-      if(currentDocType === 'markdown'){
-        contentEl.classList.add('markdown');
-        const mdDiv = document.createElement('div');
-        mdDiv.className = 'md-content';
-        mdDiv.innerHTML = marked.parse(doc.content);
-        contentEl.appendChild(mdDiv);
-      } else {
-        contentEl.classList.remove('markdown');
-        contentEl.textContent = doc.content;
-      }
+      if (currentDocType === 'markdown') contentEl.classList.add('markdown');
+      else contentEl.classList.remove('markdown');
 
-      // 恢复进度
-      if(doc.progress){
-        contentEl.scrollTop = doc.progress * contentEl.scrollHeight;
-      }
+      virtualReader = new VirtualReader(currentDocContent, contentEl, currentDocType === 'markdown', currentFontSize);
 
+      // 预提取目录
+      tocHeadings = virtualReader.getTOC();
+
+      // 更新统计
       updateReadingStats();
-      updateReadingProgressFloat();
+
+      // 初始化分页并恢复进度
+      const progress = doc.progress || 0;
+      virtualReader.init(progress);
+
+      // 切换页面
       document.getElementById('libraryPage').style.display = 'none';
       document.getElementById('readerPage').style.display = 'flex';
       document.getElementById('readingProgressFloat').style.display = 'flex';
       document.getElementById('readingInfoPanel').style.display = 'flex';
       applyReaderSettings();
       startSessionTimer();
-      showToast(`已打开：${doc.title}`, 'info', 2000);
-    } catch(err){
+      updatePageInfo();
+      updateReadingProgressFloat();
+
+      prepOverlay.classList.remove('active');
+      showToast(`已打开：${doc.title}（${virtualReader.total} 页）`, 'info', 2500);
+    } catch(err) {
+      prepOverlay.classList.remove('active');
       showToast('打开文档失败：' + err.message, 'error');
     }
   }
 
   function closeReader(){
-    if(currentDocId){
-      const contentEl = document.getElementById('readerContent');
-      const progress = contentEl.scrollHeight > 0 ? contentEl.scrollTop / contentEl.scrollHeight : 0;
+    if(currentDocId && virtualReader){
+      // 保存进度
+      const info = virtualReader.onScroll();
+      const progress = info ? info.progress : 0;
       apiRequest('POST', '/reader/progress', { id: currentDocId, progress }).catch(()=>{});
+      virtualReader.destroy();
+      virtualReader = null;
     }
     document.getElementById('readerPage').style.display = 'none';
     document.getElementById('libraryPage').style.display = 'block';
     document.getElementById('readingProgressFloat').style.display = 'none';
     document.getElementById('readingInfoPanel').style.display = 'none';
-    currentDocId = null;
-    currentDocMeta = null;
-    currentDocContent = '';
+    currentDocId = null; currentDocMeta = null; currentDocContent = '';
+    tocHeadings = [];
     stopSessionTimer();
     loadLibrary();
   }
 
   // ====== 阅读设置 ======
   function applyReaderSettings(){
-    const contentEl = document.getElementById('readerContent');
-    contentEl.style.fontSize = currentFontSize + 'px';
-    contentEl.style.lineHeight = '1.8';
+    const ce = document.getElementById('readerContent');
+    ce.style.fontSize = currentFontSize + 'px';
+    ce.style.lineHeight = '1.8';
     document.body.className = 'theme-' + currentTheme;
   }
 
@@ -761,11 +829,13 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
     currentFontSize = Math.max(12, currentFontSize - 1);
     document.getElementById('fontSizeInput').value = currentFontSize;
     applyReaderSettings();
+    if(virtualReader) virtualReader.rebuildForFont(currentFontSize);
   });
   document.getElementById('fontPlus').addEventListener('click', () => {
     currentFontSize = Math.min(28, currentFontSize + 1);
     document.getElementById('fontSizeInput').value = currentFontSize;
     applyReaderSettings();
+    if(virtualReader) virtualReader.rebuildForFont(currentFontSize);
   });
   document.getElementById('fontSizeInput').addEventListener('change', (e) => {
     currentFontSize = parseInt(e.target.value) || 16;
@@ -773,52 +843,67 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
     if(currentFontSize > 28) currentFontSize = 28;
     e.target.value = currentFontSize;
     applyReaderSettings();
+    if(virtualReader) virtualReader.rebuildForFont(currentFontSize);
   });
-  document.getElementById('themeLight').addEventListener('click', () => { currentTheme = 'light'; applyReaderSettings(); });
-  document.getElementById('themeDark').addEventListener('click', () => { currentTheme = 'dark'; applyReaderSettings(); });
-  document.getElementById('themeSepia').addEventListener('click', () => { currentTheme = 'sepia'; applyReaderSettings(); });
+  document.getElementById('themeLight').addEventListener('click', () => { currentTheme='light'; applyReaderSettings(); });
+  document.getElementById('themeDark').addEventListener('click', () => { currentTheme='dark'; applyReaderSettings(); });
+  document.getElementById('themeSepia').addEventListener('click', () => { currentTheme='sepia'; applyReaderSettings(); });
 
-  // ====== 阅读统计 ======
+  // ====== 页码导航 ======
+  document.getElementById('prevPageBtn').addEventListener('click', () => {
+    if(virtualReader) virtualReader.jumpToPage(virtualReader.cur - 1);
+    updatePageInfo(); updateReadingProgressFloat();
+  });
+  document.getElementById('nextPageBtn').addEventListener('click', () => {
+    if(virtualReader) virtualReader.jumpToPage(virtualReader.cur + 1);
+    updatePageInfo(); updateReadingProgressFloat();
+  });
+  document.getElementById('pageJumpInput').addEventListener('change', (e) => {
+    if(!virtualReader) return;
+    const p = parseInt(e.target.value) - 1;
+    if(p >= 0 && p < virtualReader.total) virtualReader.jumpToPage(p);
+    e.target.value = (virtualReader.cur + 1);
+    updatePageInfo(); updateReadingProgressFloat();
+  });
+
+  function updatePageInfo(){
+    if(!virtualReader) return;
+    const cur = virtualReader.cur + 1;
+    const tot = virtualReader.total;
+    document.getElementById('pageInfoText').textContent = `${cur}/${tot}`;
+    document.getElementById('pageJumpInput').value = cur;
+    document.getElementById('pageJumpInput').max = tot;
+  }
+
+  // ====== 阅读统计（预计算，O(1)） ======
   function updateReadingStats(){
-    if(!currentDocMeta) return;
-    const text = currentDocContent;
-    const words = text.replace(/\s+/g, '').length;
+    if(!virtualReader) return;
+    const words = virtualReader.totalWords;
     const readTime = Math.ceil(words / 400);
     document.getElementById('wordCount').textContent = `字数：${words}`;
     document.getElementById('readTime').textContent = `约${readTime}分钟`;
     document.getElementById('totalWordsInfo').textContent = `${words}字`;
   }
 
-  // ====== 阅读进度浮动指示器 & 信息面板 ======
+  // ====== 阅读进度浮动指示器 ======
   function updateReadingProgressFloat(){
-    if(!currentDocId) return;
-    const contentEl = document.getElementById('readerContent');
-    const scrollHeight = contentEl.scrollHeight;
-    const scrollTop = contentEl.scrollTop;
-    const clientHeight = contentEl.clientHeight;
-    const progress = scrollHeight > 0 ? Math.min(1, (scrollTop + clientHeight) / scrollHeight) : 0;
-    const pct = Math.round(progress * 100);
+    if(!virtualReader) return;
+    const info = virtualReader.onScroll();
+    if(!info) return;
+    const pct = Math.round(info.progress * 100);
 
-    // 更新环形进度
-    const circumference = 2 * Math.PI * 17;
-    const offset = circumference * (1 - progress);
-    document.getElementById('progressRingFg').style.strokeDashoffset = offset;
+    const circ = 2 * Math.PI * 17;
+    document.getElementById('progressRingFg').style.strokeDashoffset = circ * (1 - info.progress);
     document.getElementById('progressRingText').textContent = pct + '%';
-    document.getElementById('progressLabel').textContent = `阅读进度 ${pct}%`;
-
-    // 更新信息面板
+    document.getElementById('progressLabel').textContent = `第${info.page}/${info.total}页 ${pct}%`;
     document.getElementById('positionInfo').textContent = pct + '%';
-
-    const totalWords = currentDocContent.replace(/\s+/g, '').length;
-    const wordsRead = Math.round(totalWords * progress);
-    document.getElementById('wordsReadInfo').textContent = `${wordsRead} / ${totalWords}字`;
-
-    const remainWords = totalWords - wordsRead;
-    const remainMin = Math.ceil(remainWords / 400);
-    document.getElementById('remainTimeInfo').textContent = `剩${remainMin}分钟`;
+    document.getElementById('wordsReadInfo').textContent = `${info.wordsRead} / ${info.totalWords}字`;
+    const remMin = Math.ceil((info.totalWords - info.wordsRead) / 400);
+    document.getElementById('remainTimeInfo').textContent = `剩${remMin}分钟`;
+    document.getElementById('pageInfoText').textContent = `${info.page}/${info.total}`;
   }
 
-  // 滚动监听（节流）
+  // 滚动监听（rAF 节流）
   let scrollTick = false;
   document.getElementById('readerContent').addEventListener('scroll', () => {
     if(scrollTick) return;
@@ -834,227 +919,120 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
     sessionStartTime = Date.now();
     if(sessionTimerInterval) clearInterval(sessionTimerInterval);
     sessionTimerInterval = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
-      const min = Math.floor(elapsed / 60);
-      const sec = elapsed % 60;
-      document.getElementById('sessionTimer').textContent = `${min}:${String(sec).padStart(2,'0')}`;
+      const el = Math.floor((Date.now() - sessionStartTime) / 1000);
+      document.getElementById('sessionTimer').textContent = `${Math.floor(el/60)}:${String(el%60).padStart(2,'0')}`;
     }, 1000);
   }
-  function stopSessionTimer(){
-    if(sessionTimerInterval){
-      clearInterval(sessionTimerInterval);
-      sessionTimerInterval = null;
-    }
-    sessionStartTime = null;
-  }
+  function stopSessionTimer(){ if(sessionTimerInterval){ clearInterval(sessionTimerInterval); sessionTimerInterval=null; } sessionStartTime=null; }
 
-  // ====== 目录提取与跳转 ======
+  // ====== 目录（带页码跳转） ======
   document.getElementById('tocBtn').addEventListener('click', () => {
-    const headings = extractTOC(currentDocContent, currentDocType);
-    if(headings.length === 0){
-      showToast('未检测到章节标题', 'warning');
-      return;
-    }
-    showModal('目录', buildTOCList(headings));
+    if(!tocHeadings.length){ showToast('未检测到章节标题','warning'); return; }
+    let html = '';
+    tocHeadings.forEach((h, i) => {
+      html += `<div class="toc-item" data-page="${h.page}" style="padding-left:${(h.level-1)*16}px">${escapeHtml(h.text)} <span style="font-size:.7rem;color:var(--fg2)">P${h.page+1}</span></div>`;
+    });
+    showModal('目录', html);
+    document.querySelectorAll('.toc-item').forEach(item => {
+      item.addEventListener('click', () => {
+        if(virtualReader) virtualReader.jumpToPage(parseInt(item.dataset.page));
+        closeModal();
+        updatePageInfo();
+      });
+    });
   });
 
-  function extractTOC(content, type){
-    const headings = [];
-    const lines = content.split('\n');
-    for(let i = 0; i < lines.length; i++){
-      const line = lines[i].trim();
-      if(type === 'markdown'){
-        const match = line.match(/^(#{1,3})\s+(.*)/);
-        if(match){
-          headings.push({ level: match[1].length, text: match[2], line: i });
-        }
-      } else {
-        const match = line.match(/^(第[0-9一二三四五六七八九十百千万]+[章节卷]|Chapter\s+\d+)\s*(.*)/i);
-        if(match){
-          headings.push({ level: 1, text: line, line: i });
-        }
-      }
-    }
-    return headings;
-  }
-
-  function buildTOCList(headings){
-    let html = '';
-    headings.forEach(h => {
-      html += `<div class="toc-item" data-line="${h.line}" style="padding-left:${(h.level-1)*16}px">${escapeHtml(h.text)}</div>`;
-    });
-    return html;
-  }
-
-  function jumpToLine(lineNumber){
-    const contentEl = document.getElementById('readerContent');
-    const text = contentEl.textContent;
-    const lines = text.split('\n');
-    if(lineNumber < lines.length){
-      const targetText = lines[lineNumber].substring(0, 50);
-      const index = text.indexOf(targetText);
-      if(index !== -1){
-        const range = document.createRange();
-        const textNode = contentEl.firstChild;
-        range.setStart(textNode, index);
-        range.setEnd(textNode, index);
-        const rect = range.getBoundingClientRect();
-        contentEl.scrollTop += rect.top - contentEl.getBoundingClientRect().top - 50;
-      }
-    }
-    closeModal();
-  }
-
-  // ====== 书签功能 ======
+  // ====== 书签 ======
   document.getElementById('bookmarkBtn').addEventListener('click', async () => {
-    if(!currentDocId || !currentDocMeta) return;
-    const contentEl = document.getElementById('readerContent');
-    const progress = contentEl.scrollHeight > 0 ? contentEl.scrollTop / contentEl.scrollHeight : 0;
+    if(!currentDocId || !currentDocMeta || !virtualReader) return;
+    const info = virtualReader.onScroll();
+    const progress = info ? info.progress : 0;
+    const page = info ? info.page : 1;
     const note = prompt('书签备注（可选）');
-    const bookmark = { progress, note: note || '', time: Date.now() };
+    const bookmark = { progress, note: note||'', time: Date.now(), page };
     currentDocMeta.bookmarks = currentDocMeta.bookmarks || [];
     currentDocMeta.bookmarks.push(bookmark);
-    try{
+    try {
       await apiRequest('POST', '/reader/update', { id: currentDocId, bookmarks: currentDocMeta.bookmarks });
       showToast('书签已保存', 'success');
-      showModal('书签', currentDocMeta.bookmarks.map((b, i) => `
-        <div class="bookmark-item">
-          <span>${Math.round(b.progress*100)}%</span>
-          <span>${escapeHtml(b.note || '无备注')}</span>
-          <button onclick="jumpToBookmark(${i})">跳转</button>
-        </div>
-      `).join(''));
+      showModal('书签', currentDocMeta.bookmarks.map((b, i) =>
+        `<div class="bookmark-item"><span>P${b.page||1} · ${Math.round(b.progress*100)}%</span><span>${escapeHtml(b.note||'无备注')}</span><button onclick="jumpToBookmark(${i})">跳转</button></div>`
+      ).join(''));
     } catch(err){ showToast('保存书签失败：' + err.message, 'error'); }
   });
-
-  window.jumpToBookmark = function(index){
-    if(!currentDocMeta || !currentDocMeta.bookmarks[index]) return;
-    const progress = currentDocMeta.bookmarks[index].progress;
-    const contentEl = document.getElementById('readerContent');
-    contentEl.scrollTop = progress * contentEl.scrollHeight;
+  window.jumpToBookmark = function(i){
+    if(!currentDocMeta || !currentDocMeta.bookmarks[i] || !virtualReader) return;
+    virtualReader.jumpToProgress(currentDocMeta.bookmarks[i].progress);
     closeModal();
+    updatePageInfo();
   };
 
-  // ====== 全文搜索 ======
+  // ====== 全文搜索（原始字符串扫描 + 跳页定位） ======
   document.getElementById('searchDocBtn').addEventListener('click', () => {
-    const keyword = prompt('输入搜索关键词：');
-    if(!keyword) return;
-    const contentEl = document.getElementById('readerContent');
-    const text = contentEl.textContent;
-    const regex = new RegExp(keyword.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'gi');
-    let match;
-    let count = 0;
-    const matches = [];
-    while((match = regex.exec(text)) !== null){
-      matches.push(match.index);
-      count++;
-    }
-    if(count === 0){
-      showToast('未找到匹配项', 'warning');
-      return;
-    }
-    showToast(`共找到 ${count} 处匹配`, 'info');
-    let current = 0;
-    function highlightAndScroll(){
-      contentEl.innerHTML = contentEl.textContent.replace(/<span class="highlight">(.*?)<\/span>/g, '$1');
-      const text2 = contentEl.textContent;
-      const index = matches[current];
-      const before = text2.substring(0, index);
-      const after = text2.substring(index + keyword.length);
-      contentEl.innerHTML = escapeHtml(before) + `<span class="highlight">${escapeHtml(keyword)}</span>` + escapeHtml(after);
-      const range = document.createRange();
-      const span = contentEl.querySelector('.highlight');
-      range.setStart(span, 0);
-      range.setEnd(span, 0);
-      const rect = range.getBoundingClientRect();
-      contentEl.scrollTop += rect.top - contentEl.getBoundingClientRect().top - 50;
-    }
-    highlightAndScroll();
-    const searchNext = () => {
-      current = (current + 1) % matches.length;
-      highlightAndScroll();
-      showToast(`第 ${current+1}/${count} 处`, 'info', 1500);
-    };
-    searchNext();
+    if(!virtualReader) return;
+    const kw = prompt('输入搜索关键词：');
+    if(!kw) return;
+
+    const results = virtualReader.search(kw, 200);
+    if(results.length === 0){ showToast('未找到匹配项','warning'); return; }
+
+    showToast(`共找到 ${results.length} 处匹配`, 'info');
+
+    // 构建结果列表
+    let html = `<div style="font-size:.8rem;color:var(--fg2);margin-bottom:8px">${results.length} 处匹配</div>`;
+    results.forEach((r, i) => {
+      // 高亮关键词
+      const ctx = escapeHtml(r.ctx).replace(new RegExp(escapeRegex(kw)), m => `<mark>${m}</mark>`);
+      html += `<div class="search-result-item" data-page="${r.page}">
+        <div>${i+1}.</div>
+        <div class="search-result-context">${ctx}</div>
+        <div class="search-result-page">第 ${r.page+1} 页</div>
+      </div>`;
+    });
+    showModal('搜索结果', html);
+
+    document.querySelectorAll('.search-result-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const p = parseInt(item.dataset.page);
+        if(virtualReader) virtualReader.jumpToPage(p);
+        closeModal();
+        updatePageInfo();
+        updateReadingProgressFloat();
+        showToast(`已跳转到第 ${p+1} 页`, 'info', 1500);
+      });
+    });
   });
 
   // ====== 弹窗通用 ======
   function showModal(title, contentHTML){
-    const modalContainer = document.getElementById('modalContainer');
-    modalContainer.innerHTML = `
-      <div class="modal">
-        <div class="modal-card">
-          <div class="modal-header">
-            <span class="modal-title">${escapeHtml(title)}</span>
-            <button class="modal-close" onclick="closeModal()">×</button>
-          </div>
-          <div class="modal-body">${contentHTML}</div>
-        </div>
-      </div>
-    `;
-    modalContainer.querySelectorAll('.toc-item').forEach(item => {
-      item.addEventListener('click', () => {
-        jumpToLine(parseInt(item.dataset.line));
-      });
-    });
+    document.getElementById('modalContainer').innerHTML =
+      `<div class="modal"><div class="modal-card"><div class="modal-header"><span class="modal-title">${escapeHtml(title)}</span><button class="modal-close" onclick="closeModal()">×</button></div><div class="modal-body">${contentHTML}</div></div></div>`;
   }
-  window.closeModal = function(){
-    document.getElementById('modalContainer').innerHTML = '';
-  };
+  window.closeModal = function(){ document.getElementById('modalContainer').innerHTML = ''; };
 
   // ====== 工具栏事件 ======
-  document.getElementById('searchInput').addEventListener('input', (e) => {
-    currentSearchTerm = e.target.value.trim();
-    applyFiltersAndRender();
-  });
-  document.getElementById('sortSelect').addEventListener('change', (e) => {
-    currentSort = e.target.value;
-    applyFiltersAndRender();
-  });
-  document.getElementById('categoryFilter').addEventListener('change', (e) => {
-    currentCategory = e.target.value;
-    applyFiltersAndRender();
-  });
+  document.getElementById('searchInput').addEventListener('input', e => { currentSearchTerm=e.target.value.trim(); applyFiltersAndRender(); });
+  document.getElementById('sortSelect').addEventListener('change', e => { currentSort=e.target.value; applyFiltersAndRender(); });
+  document.getElementById('categoryFilter').addEventListener('change', e => { currentCategory=e.target.value; applyFiltersAndRender(); });
   document.getElementById('trashBtn').addEventListener('click', () => {
-    if(confirm('清空回收站？所有已删除文档将被彻底移除。')){
-      apiRequest('POST', '/reader/empty-trash').then(() => {
-        showToast('回收站已清空', 'success');
-        loadLibrary();
-      }).catch(err => showToast('清空失败：' + err.message, 'error'));
-    }
+    if(confirm('清空回收站？')){ apiRequest('POST','/reader/empty-trash').then(()=>{ showToast('回收站已清空','success'); loadLibrary(); }).catch(err=>showToast('清空失败：'+err.message,'error')); }
   });
-
-  // ====== 删除文档按钮 ======
   document.getElementById('deleteDocBtn').addEventListener('click', async () => {
     if(!currentDocId) return;
     if(confirm('确定将此文档移入回收站吗？')){
-      try{
-        await apiRequest('DELETE', '/reader/delete?id=' + encodeURIComponent(currentDocId));
-        showToast('已移入回收站', 'success');
-        closeReader();
-      } catch(err){ showToast('删除失败：' + err.message, 'error'); }
+      try{ await apiRequest('DELETE','/reader/delete?id='+encodeURIComponent(currentDocId)); showToast('已移入回收站','success'); closeReader(); }
+      catch(err){ showToast('删除失败：'+err.message,'error'); }
     }
   });
 
   // ====== 工具函数 ======
-  function escapeHtml(str){
-    if(str == null) return '';
-    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
-  }
+  function escapeHtml(s){ if(s==null) return ''; return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+  function escapeRegex(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
-  // ====== 页面加载完成初始化 ======
-  showGlobalLoader();
-  setNetStatus('loading');
-
-  window.addEventListener('load', () => {
-    showToast('阅读器已加载完成', 'success', 2000);
-    setTimeout(hideGlobalLoader, 500);
-  });
-
-  // 定期更新存储统计
+  // ====== 初始化 ======
+  showGlobalLoader(); setNetStatus('loading');
+  window.addEventListener('load', () => { showToast('阅读器已加载完成','success',2000); setTimeout(hideGlobalLoader, 500); });
   setInterval(updateStorageStatus, 3000);
-
-  // 初始化
   loadLibrary();
 })();
 </script>
