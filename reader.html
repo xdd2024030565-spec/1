@@ -196,7 +196,7 @@ mark{background:yellow;color:black;border-radius:2px}
 
 <div id="libraryPage">
   <div class="topbar">
-    <button class="topbar-btn" onclick="location.href='https://xdd2024030565-spec.github.io/1/'">🏠</button>
+    <button class="topbar-btn" onclick="location.href='https://wangzhi-cunchu.pages.dev/'">🏠</button>
     <span style="font-size:1.5rem">📚</span>
     <span class="topbar-title">我的书库</span>
     <button class="topbar-btn" id="trashBtn">🗑️</button>
@@ -222,7 +222,7 @@ mark{background:yellow;color:black;border-radius:2px}
 <div id="readerPage" class="reader-mode" style="display:none;">
   <div class="reader-topbar">
     <button class="topbar-btn" id="backBtn">←</button>
-    <button class="topbar-btn" onclick="location.href='https://xdd2024030565-spec.github.io/1/'">🏠</button>
+    <button class="topbar-btn" onclick="location.href='https://wangzhi-cunchu.pages.dev/'">🏠</button>
     <span class="reader-title" id="readerTitle"></span>
     <button class="topbar-btn" id="tocBtn">📑</button>
     <button class="topbar-btn" id="bookmarkBtn">🔖</button>
@@ -310,12 +310,10 @@ mark{background:yellow;color:black;border-radius:2px}
   function loadSettings(){try{const s=JSON.parse(localStorage.getItem('reader-cfg')||'{}');if(s.fs)currentFontSize=s.fs;if(s.ff)currentFontFamilyId=s.ff;if(s.th)currentTheme=s.th;if(s.lh)currentLineHeight=s.lh;}catch(e){}}
   loadSettings();
 
-  // ====== 安全 DOM 获取工具 ======
   function $(id){return document.getElementById(id);}
   function setText(id,val){const el=$(id);if(el)el.textContent=val;}
   function setStyle(id,prop,val){const el=$(id);if(el)el.style[prop]=val;}
 
-  // ====== VirtualReader v2 ======
   class VirtualReader{
     constructor(raw,el,isMd,fontSize,fontFamilyCss,lineHeight){
       this.raw=raw;this.el=el;this.isMd=isMd;
@@ -407,12 +405,10 @@ mark{background:yellow;color:black;border-radius:2px}
     destroy(){this.el.innerHTML='';this.rendered={};this.pages=[];this.raw='';this.mdCache={};}
   }
 
-  // ====== 全局加载进度条 ======
   const globalLoader=$('globalLoader');let loaderTimeout=null;
   function showGlobalLoader(){if(!globalLoader)return;globalLoader.classList.remove('complete');globalLoader.classList.add('loading');clearTimeout(loaderTimeout);}
   function hideGlobalLoader(){if(!globalLoader)return;globalLoader.classList.remove('loading');globalLoader.classList.add('complete');clearTimeout(loaderTimeout);loaderTimeout=setTimeout(()=>{globalLoader.classList.remove('complete');globalLoader.style.width='0';},600);}
 
-  // ====== Toast ======
   const toastContainer=$('toastContainer');
   const toastIcons={success:'✅',error:'❌',info:'ℹ️',warning:'⚠️'};
   function showToast(msg,type='info',dur=3500){
@@ -425,7 +421,6 @@ mark{background:yellow;color:black;border-radius:2px}
   }
   function removeToast(t){if(!t||!t.parentNode)return;t.classList.add('removing');setTimeout(()=>{if(t.parentNode)t.parentNode.removeChild(t);},300);}
 
-  // ====== API ======
   async function apiRequest(method,path,body,onProgress){
     showGlobalLoader();setNetStatus('loading');const t0=performance.now();
     try{
@@ -457,7 +452,6 @@ mark{background:yellow;color:black;border-radius:2px}
   function updateStorageStatus(){setText('librarySizeStatus','💾 '+formatBytes(totalBytesSent+totalBytesReceived));}
   setInterval(updateStorageStatus,2000);
 
-  // ====== 书库 ======
   async function loadLibrary(){
     const c=$('docListContainer');if(!c)return;c.innerHTML='<div class="loading">⏳ 加载中...</div>';
     try{docList=await apiRequest('GET','/reader/list');updateDocCountStatus();applyFiltersAndRender();showToast('已加载 '+docList.length+' 篇文档','success',2000);}
@@ -490,7 +484,6 @@ mark{background:yellow;color:black;border-radius:2px}
   }
   function updateCategoryFilter(){const sel=$('categoryFilter');if(!sel)return;const cats=new Set(docList.map(d=>d.category||'未分类'));let h='<option value="all">全部分类</option>';cats.forEach(c=>h+='<option value="'+escapeHtml(c)+'">'+escapeHtml(c)+'</option>');sel.innerHTML=h;sel.value=currentCategory;}
 
-  // ====== 导入 ======
   const importArea=$('importArea'),fileInput=$('fileInput');
   if(importArea){
     importArea.addEventListener('dragover',e=>{e.preventDefault();importArea.classList.add('dragover');});
@@ -522,7 +515,6 @@ mark{background:yellow;color:black;border-radius:2px}
   }
   function readFileAsText(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=e=>resolve(e.target.result);r.onerror=()=>reject(r.error);r.readAsText(file);});}
 
-  // ====== 打开阅读器 ======
   async function openReader(id){
     currentDocId=id;
     const prepOverlay=$('contentPrepOverlay');
@@ -572,7 +564,6 @@ mark{background:yellow;color:black;border-radius:2px}
     stopSessionTimer();loadLibrary();
   }
 
-  // ====== 阅读设置 ======
   function applyReaderSettings(){
     const ce=$('readerContent');
     if(ce){ce.style.setProperty('--reader-font-size',currentFontSize+'px');ce.style.setProperty('--reader-font-family',FONT_MAP[currentFontFamilyId]?FONT_MAP[currentFontFamilyId].css:'sans-serif');ce.style.setProperty('--reader-line-height',currentLineHeight);}
@@ -605,18 +596,15 @@ mark{background:yellow;color:black;border-radius:2px}
   const themeDark=$('themeDark');if(themeDark)themeDark.addEventListener('click',()=>{currentTheme='dark';applyReaderSettings();saveSettings();});
   const themeSepia=$('themeSepia');if(themeSepia)themeSepia.addEventListener('click',()=>{currentTheme='sepia';applyReaderSettings();saveSettings();});
 
-  // ====== 页码导航 ======
   const prevPageBtn=$('prevPageBtn');if(prevPageBtn)prevPageBtn.addEventListener('click',()=>{if(virtualReader)virtualReader.jumpToPage(virtualReader.cur-1);updatePageInfo();updateReadingProgressFloat();});
   const nextPageBtn=$('nextPageBtn');if(nextPageBtn)nextPageBtn.addEventListener('click',()=>{if(virtualReader)virtualReader.jumpToPage(virtualReader.cur+1);updatePageInfo();updateReadingProgressFloat();});
   const pageJumpInput=$('pageJumpInput');if(pageJumpInput)pageJumpInput.addEventListener('change',(e)=>{if(!virtualReader)return;const p=parseInt(e.target.value)-1;if(p>=0&&p<virtualReader.total)virtualReader.jumpToPage(p);e.target.value=(virtualReader.cur+1);updatePageInfo();updateReadingProgressFloat();});
   function updatePageInfo(){if(!virtualReader)return;const c=virtualReader.cur+1,t=virtualReader.total;setText('pageInfoText',c+'/'+t);const pji=$('pageJumpInput');if(pji){pji.value=c;pji.max=t;}}
 
-  // ====== 统计（安全访问） ======
   function updateReadingStats(){
     if(!virtualReader)return;
     const w=virtualReader.totalWords,r=Math.ceil(w/400);
     setText('totalWordsInfo',w+'字');
-    // wordCount / readTime 可能在设置栏中不存在，安全跳过
     setText('wordCount','字数：'+w);
     setText('readTime','约'+r+'分钟');
   }
@@ -637,11 +625,9 @@ mark{background:yellow;color:black;border-radius:2px}
   const readerContent=$('readerContent');
   if(readerContent)readerContent.addEventListener('scroll',()=>{if(scrollTick)return;scrollTick=true;requestAnimationFrame(()=>{updateReadingProgressFloat();scrollTick=false;});},{passive:true});
 
-  // ====== 会话计时器 ======
   function startSessionTimer(){sessionStartTime=Date.now();if(sessionTimerInterval)clearInterval(sessionTimerInterval);sessionTimerInterval=setInterval(()=>{const el=Math.floor((Date.now()-sessionStartTime)/1000);setText('sessionTimer',Math.floor(el/60)+':'+String(el%60).padStart(2,'0'));},1000);}
   function stopSessionTimer(){if(sessionTimerInterval){clearInterval(sessionTimerInterval);sessionTimerInterval=null;}sessionStartTime=null;}
 
-  // ====== 目录 ======
   const tocBtn=$('tocBtn');
   if(tocBtn)tocBtn.addEventListener('click',()=>{
     if(!tocHeadings.length){showToast('未检测到章节标题','warning');return;}
@@ -651,7 +637,6 @@ mark{background:yellow;color:black;border-radius:2px}
     document.querySelectorAll('.toc-item').forEach(item=>{item.addEventListener('click',()=>{if(virtualReader)virtualReader.jumpToPage(parseInt(item.dataset.page));closeModal();updatePageInfo();});});
   });
 
-  // ====== 书签 ======
   const bookmarkBtn=$('bookmarkBtn');
   if(bookmarkBtn)bookmarkBtn.addEventListener('click',async()=>{
     if(!currentDocId||!currentDocMeta||!virtualReader)return;
@@ -665,7 +650,6 @@ mark{background:yellow;color:black;border-radius:2px}
   });
   window.jumpToBookmark=function(i){if(!currentDocMeta||!currentDocMeta.bookmarks[i]||!virtualReader)return;virtualReader.jumpToProgress(currentDocMeta.bookmarks[i].progress);closeModal();updatePageInfo();};
 
-  // ====== 全文搜索 ======
   const searchDocBtn=$('searchDocBtn');
   if(searchDocBtn)searchDocBtn.addEventListener('click',()=>{
     if(!virtualReader)return;const kw=prompt('输入搜索关键词：');if(!kw)return;
@@ -678,22 +662,18 @@ mark{background:yellow;color:black;border-radius:2px}
     document.querySelectorAll('.search-result-item').forEach(item=>{item.addEventListener('click',()=>{const p=parseInt(item.dataset.page);if(virtualReader)virtualReader.jumpToPage(p);closeModal();updatePageInfo();updateReadingProgressFloat();showToast('已跳转到第 '+(p+1)+' 页','info',1500);});});
   });
 
-  // ====== 弹窗 ======
   function showModal(title,contentHTML){const mc=$('modalContainer');if(!mc)return;mc.innerHTML='<div class="modal"><div class="modal-card"><div class="modal-header"><span class="modal-title">'+escapeHtml(title)+'</span><button class="modal-close" onclick="closeModal()">×</button></div><div class="modal-body">'+contentHTML+'</div></div></div>';}
   window.closeModal=function(){const mc=$('modalContainer');if(mc)mc.innerHTML='';};
 
-  // ====== 工具栏 ======
   const searchInput=$('searchInput');if(searchInput)searchInput.addEventListener('input',e=>{currentSearchTerm=e.target.value.trim();applyFiltersAndRender();});
   const sortSelect=$('sortSelect');if(sortSelect)sortSelect.addEventListener('change',e=>{currentSort=e.target.value;applyFiltersAndRender();});
   const categoryFilter=$('categoryFilter');if(categoryFilter)categoryFilter.addEventListener('change',e=>{currentCategory=e.target.value;applyFiltersAndRender();});
   const trashBtn=$('trashBtn');if(trashBtn)trashBtn.addEventListener('click',()=>{if(confirm('清空回收站？')){apiRequest('POST','/reader/empty-trash').then(()=>{showToast('回收站已清空','success');loadLibrary();}).catch(err=>showToast('清空失败：'+err.message,'error'));}});
   const deleteDocBtn=$('deleteDocBtn');if(deleteDocBtn)deleteDocBtn.addEventListener('click',async()=>{if(!currentDocId)return;if(confirm('确定将此文档移入回收站吗？')){try{await apiRequest('DELETE','/reader/delete?id='+encodeURIComponent(currentDocId));showToast('已移入回收站','success');closeReader();}catch(err){showToast('删除失败：'+err.message,'error');}}});
 
-  // ====== 工具函数 ======
   function escapeHtml(s){if(s==null)return'';return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);}
   function escapeRegex(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
 
-  // ====== 初始化 ======
   applyReaderSettings();
   showGlobalLoader();setNetStatus('loading');
   window.addEventListener('load',()=>{showToast('阅读器已加载完成','success',2000);setTimeout(hideGlobalLoader,500);});
