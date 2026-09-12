@@ -5,25 +5,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>阅读器</title>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#f5f5f7; --bg2:#fff; --fg:#1a1a1a; --fg2:#86868b; --border:#d2d2d7;
   --accent:#0071e3; --accent-bg:rgba(0,113,227,.08); --danger:#ff3b30;
   --card:#fff; --radius:12px; --ease:cubic-bezier(.2,.8,.2,1);
   --success:#34c759; --warning:#ff9500; --info:#5ac8fa;
+  --reader-font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --reader-font-size:16px;
+  --reader-line-height:1.8;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--fg);line-height:1.6;font-size:16px;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 body.theme-dark{--bg:#000;--bg2:#1c1c1e;--fg:#f5f5f7;--fg2:#86868b;--border:#38383a;--accent:#0a84ff;--accent-bg:rgba(10,132,255,.15);--card:#1c1c1e;--success:#30d158;--warning:#ff9f0a;--info:#64d2ff}
 body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:#d5c4a1;--accent:#9a6b1f;--accent-bg:rgba(154,107,31,.08);--card:#faf3e6;--success:#34c759;--warning:#ff9500;--info:#5ac8fa}
 
-/* ====== 全局顶部加载进度条 ====== */
 #globalLoader{position:fixed;top:0;left:0;height:3px;width:0;z-index:9999;background:linear-gradient(90deg,var(--accent),var(--info));border-radius:0 3px 3px 0;transition:width .3s var(--ease);box-shadow:0 0 8px var(--accent)}
 #globalLoader.loading{width:30vw;animation:loaderPulse 1.5s ease-in-out infinite}
 #globalLoader.complete{width:100vw;transition:width .4s var(--ease),opacity .4s ease .2s;opacity:0}
 @keyframes loaderPulse{0%,100%{opacity:.5}50%{opacity:1}}
 
-/* ====== Toast 通知 ====== */
 #toastContainer{position:fixed;top:60px;right:12px;z-index:9998;display:flex;flex-direction:column;gap:8px;max-width:360px}
 .toast{display:flex;align-items:center;gap:8px;padding:12px 16px;border-radius:10px;background:var(--card);border:1px solid var(--border);box-shadow:0 4px 16px rgba(0,0,0,.12);font-size:.9rem;animation:toastIn .3s var(--ease);cursor:pointer;max-width:100%}
 .toast.removing{animation:toastOut .3s var(--ease) forwards}
@@ -32,7 +36,6 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
 @keyframes toastIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
 @keyframes toastOut{to{transform:translateX(120%);opacity:0}}
 
-/* ====== 上传进度面板 ====== */
 .upload-panel{position:fixed;bottom:28px;left:0;right:0;background:var(--card);border-top:1px solid var(--border);padding:12px 16px;z-index:50;display:none;flex-direction:column;gap:8px;max-height:40vh;overflow-y:auto}
 .upload-panel.active{display:flex;animation:slideUp .3s var(--ease)}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
@@ -48,7 +51,6 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
 .upload-bar.error{background:var(--danger)}
 .upload-task-detail{font-size:.75rem;color:var(--fg2);display:flex;gap:8px}
 
-/* ====== 底部状态栏 ====== */
 #statusBar{position:fixed;bottom:0;left:0;right:0;height:28px;background:var(--card);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:.7rem;color:var(--fg2);z-index:15;gap:8px;overflow:hidden}
 .status-left,.status-right{display:flex;align-items:center;gap:10px;white-space:nowrap}
 .status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
@@ -59,7 +61,6 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
 .status-item{display:flex;align-items:center;gap:4px}
 .status-divider{width:1px;height:12px;background:var(--border)}
 
-/* ====== 顶部栏 ====== */
 .topbar{position:fixed;top:0;left:0;right:0;height:56px;background:var(--card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;z-index:10;gap:8px}
 .topbar-title{font-size:1.2rem;font-weight:600;margin-left:4px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .topbar-btn{background:none;border:none;color:var(--accent);font-size:1rem;cursor:pointer;padding:8px;border-radius:8px}
@@ -84,18 +85,35 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
 .reader-topbar{height:56px;display:flex;align-items:center;padding:0 8px;border-bottom:1px solid var(--border);background:var(--card);gap:4px}
 .reader-title{flex:1;text-align:center;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 8px}
 
-/* ====== 阅读内容区 ====== */
-.reader-content{flex:1;overflow-y:auto;padding:20px 16px 8px;white-space:pre-wrap;word-break:break-word;font-size:1rem;line-height:1.8;-webkit-overflow-scrolling:touch;contain:content}
+/* ====== 阅读内容区 —— 极致性能 ====== */
+.reader-content{
+  flex:1;overflow-y:auto;padding:20px 16px 8px;
+  font-family:var(--reader-font-family);
+  font-size:var(--reader-font-size);
+  line-height:var(--reader-line-height);
+  white-space:pre-wrap;word-break:break-word;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  contain:content;
+  will-change:scroll-position;
+}
 .reader-content.markdown{white-space:normal}
-.vpage{max-width:800px;margin:0 auto 8px}
-.vpage-spacer{width:100%;pointer-events:none}
+.vpage{
+  max-width:800px;margin:0 auto 8px;
+  content-visibility:auto;
+  contain-intrinsic-size:auto 4000px;
+  contain:layout style paint;
+}
+.vpage-spacer{width:100%;pointer-events:none;contain:strict}
 
 /* ====== 阅读底部设置栏 ====== */
-.reader-settings{background:var(--card);border-top:1px solid var(--border);padding:8px 12px;display:flex;gap:8px;align-items:center;justify-content:space-between;z-index:21;flex-wrap:wrap}
-.setting-group{display:flex;gap:8px;align-items:center}
-.setting-btn{border:1px solid var(--border);background:var(--bg2);color:var(--fg);padding:6px 12px;border-radius:8px;font-size:.85rem;cursor:pointer}
+.reader-settings{background:var(--card);border-top:1px solid var(--border);padding:6px 10px;display:flex;gap:6px;align-items:center;justify-content:space-between;z-index:21;flex-wrap:wrap}
+.setting-group{display:flex;gap:6px;align-items:center}
+.setting-btn{border:1px solid var(--border);background:var(--bg2);color:var(--fg);padding:5px 10px;border-radius:8px;font-size:.85rem;cursor:pointer;white-space:nowrap}
 .setting-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-.font-size-input{width:50px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:4px;background:var(--bg2);color:var(--fg)}
+.setting-btn:active{background:var(--accent-bg)}
+.font-size-input{width:42px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:3px;background:var(--bg2);color:var(--fg);font-size:.85rem}
+.font-select,.line-height-select{padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--fg);font-size:.8rem;max-width:90px}
 .empty-state{text-align:center;color:var(--fg2);padding:40px 0}
 .loading{text-align:center;color:var(--fg2);padding:20px}
 .toolbar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
@@ -110,7 +128,6 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
 .highlight{background:yellow;color:black}
 .deleted-item{opacity:.6}
 
-/* ====== 阅读进度浮动指示器 ====== */
 #readingProgressFloat{position:fixed;top:56px;right:8px;z-index:18;display:flex;flex-direction:column;align-items:flex-end;gap:4px;pointer-events:none}
 .progress-ring{width:40px;height:40px;position:relative}
 .progress-ring svg{transform:rotate(-90deg)}
@@ -119,26 +136,22 @@ body.theme-sepia{--bg:#f5ecd7;--bg2:#faf3e6;--fg:#3e2f1c;--fg2:#8a7a5a;--border:
 .progress-ring-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:.65rem;font-weight:700;color:var(--fg)}
 .progress-label{font-size:.7rem;color:var(--fg2);background:var(--card);padding:2px 8px;border-radius:8px;border:1px solid var(--border)}
 
-/* ====== 阅读信息浮窗 ====== */
 #readingInfoPanel{position:fixed;top:56px;left:8px;z-index:18;display:flex;flex-direction:column;gap:4px;pointer-events:none}
 .info-chip{font-size:.7rem;color:var(--fg2);background:var(--card);padding:3px 10px;border-radius:8px;border:1px solid var(--border);white-space:nowrap;display:flex;align-items:center;gap:4px}
 .info-chip .chip-icon{font-size:.75rem}
 
-/* ====== 页码导航 ====== */
-.page-nav{display:flex;align-items:center;gap:4px}
-.page-nav button{border:1px solid var(--border);background:var(--bg2);color:var(--fg);padding:4px 10px;border-radius:6px;font-size:.85rem;cursor:pointer;min-width:32px}
+.page-nav{display:flex;align-items:center;gap:3px}
+.page-nav button{border:1px solid var(--border);background:var(--bg2);color:var(--fg);padding:4px 8px;border-radius:6px;font-size:.85rem;cursor:pointer;min-width:28px}
 .page-nav button:active{background:var(--accent-bg)}
-.page-nav input{width:45px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:3px 2px;background:var(--bg2);color:var(--fg);font-size:.8rem}
-.page-nav .page-info{font-size:.78rem;color:var(--fg2);white-space:nowrap}
+.page-nav input{width:40px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:3px 2px;background:var(--bg2);color:var(--fg);font-size:.8rem}
+.page-nav .page-info{font-size:.75rem;color:var(--fg2);white-space:nowrap}
 
-/* ====== 内容准备遮罩 ====== */
 #contentPrepOverlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:40;display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px}
 #contentPrepOverlay.active{display:flex}
 .prep-spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,.3);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .prep-text{color:#fff;font-size:.9rem}
 
-/* ====== 搜索结果 ====== */
 .search-result-item{padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer}
 .search-result-item:hover{background:var(--accent-bg)}
 .search-result-context{font-size:.8rem;color:var(--fg2);margin-top:4px;word-break:break-all}
@@ -148,19 +161,14 @@ mark{background:yellow;color:black;border-radius:2px}
 </head>
 <body class="theme-light">
 
-<!-- 全局加载进度条 -->
 <div id="globalLoader"></div>
-
-<!-- Toast 容器 -->
 <div id="toastContainer"></div>
 
-<!-- 内容准备遮罩 -->
 <div id="contentPrepOverlay">
   <div class="prep-spinner"></div>
   <div class="prep-text" id="prepText">正在准备内容...</div>
 </div>
 
-<!-- 上传进度面板 -->
 <div class="upload-panel" id="uploadPanel">
   <div class="upload-panel-header">
     <span>📤 上传进度</span>
@@ -169,7 +177,6 @@ mark{background:yellow;color:black;border-radius:2px}
   <div id="uploadTasks"></div>
 </div>
 
-<!-- 阅读进度浮动指示器 -->
 <div id="readingProgressFloat" style="display:none;">
   <div class="progress-ring">
     <svg width="40" height="40" viewBox="0 0 40 40">
@@ -181,7 +188,6 @@ mark{background:yellow;color:black;border-radius:2px}
   <span class="progress-label" id="progressLabel">阅读进度</span>
 </div>
 
-<!-- 阅读信息浮窗 -->
 <div id="readingInfoPanel" style="display:none;">
   <div class="info-chip"><span class="chip-icon">⏱️</span><span id="sessionTimer">0:00</span></div>
   <div class="info-chip"><span class="chip-icon">📍</span><span id="positionInfo">0%</span></div>
@@ -199,7 +205,7 @@ mark{background:yellow;color:black;border-radius:2px}
   </div>
   <div class="main">
     <div class="import-area" id="importArea">
-      <label class="import-label" for="fileInput">导入 TXT / Markdown 文件（可多选/可拖放）</label>
+      <label class="import-label" for="fileInput">导入 TXT / Markdown（可多选/可拖放）</label>
       <input type="file" id="fileInput" accept=".txt,.md,.markdown,text/plain" multiple>
     </div>
     <div class="toolbar">
@@ -209,9 +215,7 @@ mark{background:yellow;color:black;border-radius:2px}
         <option value="createdAt">添加时间</option>
         <option value="title">标题</option>
       </select>
-      <select id="categoryFilter">
-        <option value="all">全部分类</option>
-      </select>
+      <select id="categoryFilter"><option value="all">全部分类</option></select>
     </div>
     <div id="docListContainer"></div>
   </div>
@@ -231,9 +235,25 @@ mark{background:yellow;color:black;border-radius:2px}
   <div class="reader-settings">
     <div class="setting-group">
       <button class="setting-btn" id="fontMinus">A-</button>
-      <input type="number" class="font-size-input" id="fontSizeInput" value="16" min="12" max="28">
+      <input type="number" class="font-size-input" id="fontSizeInput" value="16" min="12" max="32">
       <button class="setting-btn" id="fontPlus">A+</button>
     </div>
+    <select class="font-select" id="fontFamilySelect" title="字体">
+      <option value="system">系统默认</option>
+      <option value="songti">宋体</option>
+      <option value="heiti">黑体</option>
+      <option value="kaiti">楷体</option>
+      <option value="fangsong">仿宋</option>
+      <option value="yahei">微软雅黑</option>
+      <option value="noto-serif">思源宋体</option>
+      <option value="noto-sans">思源黑体</option>
+    </select>
+    <select class="line-height-select" id="lineHeightSelect" title="行距">
+      <option value="1.5">紧凑</option>
+      <option value="1.8" selected>正常</option>
+      <option value="2.0">宽松</option>
+      <option value="2.2">很宽</option>
+    </select>
     <div class="page-nav">
       <button id="prevPageBtn">◀</button>
       <input type="number" id="pageJumpInput" min="1" value="1">
@@ -248,10 +268,8 @@ mark{background:yellow;color:black;border-radius:2px}
   </div>
 </div>
 
-<!-- 通用弹窗容器 -->
 <div id="modalContainer"></div>
 
-<!-- 底部状态栏 -->
 <div id="statusBar">
   <div class="status-left">
     <span class="status-item"><span class="status-dot online" id="netDot"></span><span id="netStatus">在线</span></span>
@@ -270,769 +288,587 @@ mark{background:yellow;color:black;border-radius:2px}
 <script>
 (function(){
   "use strict";
+  const API_BASE='https://reader.xdd2024030565.workers.dev';
 
-  // ====== 配置 ======
-  const API_BASE = 'https://reader.xdd2024030565.workers.dev';
+  // ====== 字体映射表 ======
+  const FONT_MAP={
+    system:{name:'系统默认',css:'-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif'},
+    songti:{name:'宋体',css:'"宋体",SimSun,"Songti SC",serif'},
+    heiti:{name:'黑体',css:'"黑体",SimHei,"Heiti SC",sans-serif'},
+    kaiti:{name:'楷体',css:'"楷体",KaiTi,"Kaiti SC","STKaiti",serif'},
+    fangsong:{name:'仿宋',css:'"仿宋",FangSong,"STFangsong",serif'},
+    yahei:{name:'微软雅黑',css:'"Microsoft YaHei","微软雅黑",sans-serif'},
+    'noto-serif':{name:'思源宋体',css:'"Noto Serif SC",serif'},
+    'noto-sans':{name:'思源黑体',css:'"Noto Sans SC",sans-serif'}
+  };
 
   // ====== 状态 ======
-  let currentDocId = null;
-  let currentFontSize = 16;
-  let currentTheme = 'light';
-  let currentDocMeta = null;
-  let currentDocContent = '';
-  let currentDocType = 'txt';
-  let docList = [];
-  let filteredDocs = [];
-  let currentCategory = 'all';
-  let currentSort = 'lastReadAt';
-  let currentSearchTerm = '';
-  let sessionStartTime = null;
-  let sessionTimerInterval = null;
-  let apiLatencyValue = null;
-  let activeUploads = 0;
-  let totalBytesSent = 0;
-  let totalBytesReceived = 0;
-  let virtualReader = null; // 虚拟分页引擎实例
-  let tocHeadings = [];     // 目录缓存
+  let currentDocId=null,currentFontSize=16,currentFontFamilyId='system',currentTheme='light',currentLineHeight='1.8';
+  let currentDocMeta=null,currentDocContent='',currentDocType='txt';
+  let docList=[],filteredDocs=[],currentCategory='all',currentSort='lastReadAt',currentSearchTerm='';
+  let sessionStartTime=null,sessionTimerInterval=null,apiLatencyValue=null;
+  let activeUploads=0,totalBytesSent=0,totalBytesReceived=0;
+  let virtualReader=null,tocHeadings=[];
+
+  // ====== 设置持久化 ======
+  function saveSettings(){
+    try{localStorage.setItem('reader-cfg',JSON.stringify({fs:currentFontSize,ff:currentFontFamilyId,th:currentTheme,lh:currentLineHeight}));}catch(e){}
+  }
+  function loadSettings(){
+    try{
+      const s=JSON.parse(localStorage.getItem('reader-cfg')||'{}');
+      if(s.fs)currentFontSize=s.fs;
+      if(s.ff)currentFontFamilyId=s.ff;
+      if(s.th)currentTheme=s.th;
+      if(s.lh)currentLineHeight=s.lh;
+    }catch(e){}
+  }
+  loadSettings();
 
   // ====================================================================
-  //  虚拟分页引擎 VirtualReader
-  //  核心：只渲染当前页±buffer页到DOM，其余用占位div撑高度
-  //  滚动时动态切换渲染的页，DOM节点恒定 ≤ 5 个
+  //  VirtualReader v2 —— 增量渲染 + 预取 + 即时字号切换
   // ====================================================================
-  class VirtualReader {
-    constructor(rawContent, contentEl, isMarkdown, fontSize) {
-      this.raw = rawContent;
-      this.el = contentEl;
-      this.isMd = isMarkdown;
-      this.fs = fontSize || 16;
-      this.CHARS_PER_PAGE = isMarkdown ? 20000 : 6000;
-      this.BUFFER = 1;
-      this.pages = [];
-      this.total = 0;
-      this.cur = 0;
-      this.totalWords = 0;
-      this.cumH = [];       // 累积高度数组
-      this.rendered = {};   // 已渲染页 DOM 引用
-      this.rebuilding = false;
+  class VirtualReader{
+    constructor(raw,el,isMd,fontSize,fontFamilyCss,lineHeight){
+      this.raw=raw;this.el=el;this.isMd=isMd;
+      this.fs=fontSize||16;this.ff=fontFamilyCss||'sans-serif';this.lh=lineHeight||'1.8';
+      this.CHARS_PER_PAGE=isMd?20000:6000;
+      this.BUFFER=2;        // 前后各预渲染2页 → 共5页
+      this.PREFETCH_AHEAD=3; // idle时预parse后续3页
+      this.pages=[];this.total=0;this.cur=0;this.totalWords=0;
+      this.cumH=[];this.rendered={};this.mdCache={};
+      this.topSp=null;this.botSp=null;
+      this.rebuilding=false;this._fontDebounce=null;
       this._prepare();
     }
 
-    // ---- 分页：只算偏移量，不拷贝文本 ----
-    _prepare() {
-      const len = this.raw.length;
-      let off = 0;
-      while (off < len) {
-        let end = Math.min(off + this.CHARS_PER_PAGE, len);
-        if (end < len) {
-          // 优先在段落边界切分
-          const searchFrom = Math.max(off, end - 500);
-          let bp = this.raw.lastIndexOf('\n\n', end);
-          if (bp < searchFrom) bp = this.raw.lastIndexOf('\n', end);
-          if (bp >= searchFrom) end = bp + 1;
+    _prepare(){
+      const len=this.raw.length;let off=0;
+      while(off<len){
+        let end=Math.min(off+this.CHARS_PER_PAGE,len);
+        if(end<len){
+          const sf=Math.max(off,end-500);
+          let bp=this.raw.lastIndexOf('\n\n',end);
+          if(bp<sf)bp=this.raw.lastIndexOf('\n',end);
+          if(bp>=sf)end=bp+1;
         }
-        const cc = end - off;
-        this.pages.push({
-          i: this.pages.length,
-          s: off, e: end, cc: cc,
-          eh: Math.max(80, cc * this.fs * 0.052),  // 估算高度
-          ah: null  // 实际高度（首次渲染后测量）
-        });
-        off = end;
+        const cc=end-off;
+        this.pages.push({i:this.pages.length,s:off,e:end,cc:cc,eh:Math.max(80,cc*this.fs*0.052),ah:null});
+        off=end;
       }
-      this.total = this.pages.length;
+      this.total=this.pages.length;
       this._recalcCum();
-      // 预计算字数（一次性，~200ms for 23MB）
-      this.totalWords = this.raw.replace(/\s+/g, '').length;
+      this.totalWords=this.raw.replace(/\s+/g,'').length;
     }
 
-    // ---- 重算累积高度（用于二分查找当前页） ----
-    _recalcCum() {
-      this.cumH = [0];
-      let sum = 0;
-      for (let i = 0; i < this.pages.length; i++) {
-        sum += this.pages[i].ah || this.pages[i].eh;
-        this.cumH[i + 1] = sum;
+    _recalcCum(){
+      this.cumH=[0];let sum=0;
+      for(let i=0;i<this.pages.length;i++){sum+=this.pages[i].ah||this.pages[i].eh;this.cumH[i+1]=sum;}
+    }
+
+    _pageAt(st){
+      let lo=0,hi=this.total;
+      while(lo<hi){const mid=(lo+hi)>>1;if(this.cumH[mid+1]<=st)lo=mid+1;else hi=mid;}
+      return Math.min(lo,Math.max(0,this.total-1));
+    }
+
+    _text(i){return this.raw.substring(this.pages[i].s,this.pages[i].e);}
+
+    _makePage(i){
+      if(this.rendered[i])return this.rendered[i];
+      const d=document.createElement('div');
+      d.className='vpage';d.dataset.pi=i;
+      d.style.containIntrinsicSize=`auto ${this.pages[i].eh}px`;
+      if(this.isMd){
+        if(this.mdCache[i]===undefined)this.mdCache[i]=marked.parse(this._text(i));
+        d.innerHTML=this.mdCache[i];
+      }else{
+        d.textContent=this._text(i);
       }
-    }
-
-    // ---- 二分查找：根据 scrollTop 找当前页 ----
-    _pageAt(scrollTop) {
-      let lo = 0, hi = this.total;
-      while (lo < hi) {
-        const mid = (lo + hi) >> 1;
-        if (this.cumH[mid + 1] <= scrollTop) lo = mid + 1;
-        else hi = mid;
-      }
-      return Math.min(lo, Math.max(0, this.total - 1));
-    }
-
-    // ---- 获取页文本 ----
-    _text(i) {
-      return this.raw.substring(this.pages[i].s, this.pages[i].e);
-    }
-
-    // ---- 渲染单页到 DOM ----
-    _makePage(i) {
-      const d = document.createElement('div');
-      d.className = 'vpage';
-      d.dataset.pi = i;
-      const t = this._text(i);
-      if (this.isMd) d.innerHTML = marked.parse(t);
-      else d.textContent = t;
       return d;
     }
 
-    // ---- 重建 DOM：占位顶 + 可见页 + 占位底 ----
-    _rebuild(center) {
-      const s = Math.max(0, center - this.BUFFER);
-      const e = Math.min(this.total - 1, center + this.BUFFER);
+    // ---- 首次渲染：创建结构 ----
+    _initRender(center){
+      this.el.innerHTML='';this.rendered={};
+      this.topSp=document.createElement('div');this.topSp.className='vpage-spacer';this.el.appendChild(this.topSp);
+      const ns=Math.max(0,center-this.BUFFER),ne=Math.min(this.total-1,center+this.BUFFER);
+      for(let i=ns;i<=ne;i++){const el=this._makePage(i);this.el.appendChild(el);this.rendered[i]=el;}
+      this.botSp=document.createElement('div');this.botSp.className='vpage-spacer';this.el.appendChild(this.botSp);
+      this._updateSpacers(ns,ne);
+      this._measureHeights();
+    }
 
-      this.el.innerHTML = '';
-      this.rendered = {};
+    // ---- 增量更新：只增删边缘页面 ----
+    _update(center){
+      const idx=Object.keys(this.rendered).map(Number).sort((a,b)=>a-b);
+      if(idx.length===0){this._initRender(center);return;}
+      const ns=Math.max(0,center-this.BUFFER),ne=Math.min(this.total-1,center+this.BUFFER);
+      const oldMin=idx[0],oldMax=idx[idx.length-1];
 
-      // 顶部占位
-      const topH = this.cumH[s];
-      if (topH > 0) {
-        const sp = document.createElement('div');
-        sp.className = 'vpage-spacer';
-        sp.style.height = topH + 'px';
-        this.el.appendChild(sp);
+      // 跳跃太远 → 全量重建
+      if(center<oldMin-this.BUFFER-1||center>oldMax+this.BUFFER+1){
+        this._initRender(center);return;
       }
 
-      // 可见页
-      for (let i = s; i <= e; i++) {
-        const el = this._makePage(i);
-        this.el.appendChild(el);
-        this.rendered[i] = el;
+      // 删除范围外页面
+      for(const k of idx){
+        if(k<ns||k>ne){this.rendered[k].remove();delete this.rendered[k];}
       }
-
-      // 底部占位
-      const botH = this.cumH[this.total] - this.cumH[e + 1];
-      if (botH > 0) {
-        const sp = document.createElement('div');
-        sp.className = 'vpage-spacer';
-        sp.style.height = botH + 'px';
-        this.el.appendChild(sp);
+      // 前方新增
+      const ref=this.rendered[oldMin]||this.botSp;
+      for(let i=ns;i<oldMin;i++){
+        if(!this.rendered[i]){
+          const el=this._makePage(i);
+          this.el.insertBefore(el,ref);this.rendered[i]=el;
+        }
       }
+      // 后方新增
+      for(let i=oldMax+1;i<=ne;i++){
+        if(!this.rendered[i]){
+          const el=this._makePage(i);
+          this.el.insertBefore(el,this.botSp);this.rendered[i]=el;
+        }
+      }
+      this._updateSpacers(ns,ne);
+      this._measureHeights();
+    }
 
-      // 渲染后测量实际高度并修正估算
-      requestAnimationFrame(() => {
-        let changed = false;
-        for (const k in this.rendered) {
-          const i = +k;
-          const el = this.rendered[i];
-          if (el && el.offsetHeight > 0) {
-            const old = this.pages[i].ah || this.pages[i].eh;
-            const now = el.offsetHeight;
-            if (Math.abs(now - old) > 5) {
-              this.pages[i].ah = now;
-              changed = true;
-            }
+    _updateSpacers(ns,ne){
+      this.topSp.style.height=this.cumH[ns]+'px';
+      this.botSp.style.height=(this.cumH[this.total]-this.cumH[ne+1])+'px';
+    }
+
+    _measureHeights(){
+      requestAnimationFrame(()=>{
+        let changed=false;
+        for(const k in this.rendered){
+          const i=+k,el=this.rendered[i];
+          if(el&&el.offsetHeight>0){
+            const old=this.pages[i].ah||this.pages[i].eh;
+            const now=el.offsetHeight;
+            if(Math.abs(now-old)>5){this.pages[i].ah=now;el.style.containIntrinsicSize=`auto ${now}px`;changed=true;}
           }
         }
-        if (changed) this._recalcCum();
+        if(changed){
+          this._recalcCum();
+          const idx=Object.keys(this.rendered).map(Number).sort((a,b)=>a-b);
+          if(idx.length)this._updateSpacers(idx[0],idx[idx.length-1]);
+        }
       });
     }
 
-    // ---- 初始化 ----
-    init(progress) {
-      if (this.total === 0) return;
-      this.cur = Math.min(this.total - 1, Math.floor(progress * this.total));
-      this._rebuild(this.cur);
-      requestAnimationFrame(() => {
-        const top = this.cumH[this.cur];
-        const pp = (progress * this.total) - this.cur;
-        const ph = this.pages[this.cur].ah || this.pages[this.cur].eh;
-        this.el.scrollTop = top + pp * ph;
+    init(progress){
+      if(this.total===0)return;
+      this.cur=Math.min(this.total-1,Math.floor(progress*this.total));
+      this._initRender(this.cur);
+      requestAnimationFrame(()=>{
+        const top=this.cumH[this.cur];
+        const pp=(progress*this.total)-this.cur;
+        const ph=this.pages[this.cur].ah||this.pages[this.cur].eh;
+        this.el.scrollTop=top+pp*ph;
       });
+      this._prefetch();
     }
 
-    // ---- 滚动处理（节流由外部 rAF 控制） ----
-    onScroll() {
-      if (this.rebuilding) return null;
-      const st = this.el.scrollTop;
-      const ch = this.el.clientHeight;
-      const np = this._pageAt(st);
-
-      const s = Math.max(0, this.cur - this.BUFFER);
-      const e = Math.min(this.total - 1, this.cur + this.BUFFER);
-
-      if (np < s || np > e) {
-        // 滚出渲染范围，需要重建
-        this.rebuilding = true;
-        const saved = st;
-        this.cur = np;
-        this._rebuild(np);
-        requestAnimationFrame(() => {
-          this.el.scrollTop = saved;
-          this.rebuilding = false;
-        });
-      } else {
-        this.cur = np;
-      }
-
-      const totalH = this.cumH[this.total];
-      const prog = totalH > 0 ? Math.min(1, (st + ch) / totalH) : 0;
-      return {
-        page: this.cur + 1,
-        total: this.total,
-        progress: prog,
-        totalWords: this.totalWords,
-        wordsRead: Math.round(this.totalWords * prog)
-      };
+    onScroll(){
+      if(this.rebuilding)return null;
+      const st=this.el.scrollTop,ch=this.el.clientHeight;
+      const np=this._pageAt(st);
+      const idx=Object.keys(this.rendered).map(Number);
+      if(!idx.length)return null;
+      const s=Math.min(...idx),e=Math.max(...idx);
+      if(np<s||np>e){
+        this.rebuilding=true;
+        const saved=st;
+        this.cur=np;
+        this._update(np);
+        requestAnimationFrame(()=>{this.el.scrollTop=saved;this.rebuilding=false;});
+      }else{this.cur=np;}
+      const totalH=this.cumH[this.total];
+      const prog=totalH>0?Math.min(1,(st+ch)/totalH):0;
+      return{page:this.cur+1,total:this.total,progress:prog,totalWords:this.totalWords,wordsRead:Math.round(this.totalWords*prog)};
     }
 
-    // ---- 跳转到指定页 ----
-    jumpToPage(i) {
-      if (i < 0 || i >= this.total) return;
-      this.cur = i;
-      this._rebuild(i);
-      requestAnimationFrame(() => {
-        this.el.scrollTop = this.cumH[i];
-      });
+    // ---- requestIdleCallback 预取后续页 ----
+    _prefetch(){
+      if(!this.isMd||!('requestIdleCallback'in window))return;
+      requestIdleCallback(()=>{
+        const start=this.cur+this.BUFFER+1;
+        const end=Math.min(this.total-1,this.cur+this.BUFFER+this.PREFETCH_AHEAD);
+        for(let i=start;i<=end;i++){
+          if(this.mdCache[i]===undefined){
+            this.mdCache[i]=marked.parse(this._text(i));
+          }
+        }
+      },{timeout:1000});
     }
 
-    // ---- 跳转到进度 ----
-    jumpToProgress(p) {
-      this.jumpToPage(Math.min(this.total - 1, Math.floor(p * this.total)));
+    jumpToPage(i){
+      if(i<0||i>=this.total)return;
+      this.cur=i;this._initRender(i);
+      requestAnimationFrame(()=>{this.el.scrollTop=this.cumH[i];});
+      this._prefetch();
+    }
+    jumpToProgress(p){this.jumpToPage(Math.min(this.total-1,Math.floor(p*this.total)));}
+
+    _pageByChar(ci){
+      for(let i=0;i<this.pages.length;i++)if(ci>=this.pages[i].s&&ci<this.pages[i].e)return i;
+      return this.total-1;
     }
 
-    // ---- 按字符偏移找页码 ----
-    _pageByChar(ci) {
-      for (let i = 0; i < this.pages.length; i++)
-        if (ci >= this.pages[i].s && ci < this.pages[i].e) return i;
-      return this.total - 1;
-    }
-
-    // ---- 全文搜索（扫描原始字符串，不碰 DOM） ----
-    search(kw, max = 200) {
-      const esc = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const re = new RegExp(esc, 'gi');
-      const res = [];
-      let m;
-      while ((m = re.exec(this.raw)) !== null) {
-        res.push({
-          idx: m.index,
-          page: this._pageByChar(m.index),
-          ctx: this.raw.substring(
-            Math.max(0, m.index - 40),
-            m.index + kw.length + 40
-          )
-        });
-        if (res.length >= max) break;
+    search(kw,max=200){
+      const esc=kw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      const re=new RegExp(esc,'gi');const res=[];let m;
+      while((m=re.exec(this.raw))!==null){
+        res.push({idx:m.index,page:this._pageByChar(m.index),ctx:this.raw.substring(Math.max(0,m.index-40),m.index+kw.length+40)});
+        if(res.length>=max)break;
       }
       return res;
     }
 
-    // ---- 提取目录（带页码） ----
-    getTOC() {
-      const hs = [];
-      const lines = this.raw.split('\n');
-      let cOff = 0;
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (this.isMd) {
-          const m = line.match(/^(#{1,3})\s+(.*)/);
-          if (m) hs.push({ level: m[1].length, text: m[2], page: this._pageByChar(cOff) });
-        } else {
-          const m = line.match(/^(第[0-9一二三四五六七八九十百千万]+[章节卷]|Chapter\s+\d+)\s*(.*)/i);
-          if (m) hs.push({ level: 1, text: line, page: this._pageByChar(cOff) });
+    getTOC(){
+      const hs=[];const lines=this.raw.split('\n');let cOff=0;
+      for(let i=0;i<lines.length;i++){
+        const line=lines[i].trim();
+        if(this.isMd){
+          const m=line.match(/^(#{1,3})\s+(.*)/);
+          if(m)hs.push({level:m[1].length,text:m[2],page:this._pageByChar(cOff)});
+        }else{
+          const m=line.match(/^(第[0-9一二三四五六七八九十百千万]+[章节卷]|Chapter\s+\d+)\s*(.*)/i);
+          if(m)hs.push({level:1,text:line,page:this._pageByChar(cOff)});
         }
-        cOff += lines[i].length + 1;
+        cOff+=lines[i].length+1;
       }
       return hs;
     }
 
-    // ---- 字号变更后重建 ----
-    rebuildForFont(fs) {
-      this.fs = fs;
-      for (let i = 0; i < this.pages.length; i++) {
-        this.pages[i].eh = Math.max(80, this.pages[i].cc * fs * 0.052);
-        this.pages[i].ah = null;
-      }
-      this._recalcCum();
-      this._rebuild(this.cur);
-      requestAnimationFrame(() => {
-        this.el.scrollTop = this.cumH[this.cur];
-      });
+    // ---- 即时字号切换：只改CSS，延迟重算 ----
+    changeFontSize(fs){
+      this.fs=fs;
+      this.el.style.setProperty('--reader-font-size',fs+'px');
+      clearTimeout(this._fontDebounce);
+      this._fontDebounce=setTimeout(()=>this._recalcAfterFontChange(),200);
     }
 
-    // ---- 销毁 ----
-    destroy() {
-      this.el.innerHTML = '';
-      this.rendered = {};
-      this.pages = [];
-      this.raw = '';
+    // ---- 即时字体切换：只改CSS ----
+    changeFontFamily(ffCss){
+      this.ff=ffCss;
+      this.el.style.setProperty('--reader-font-family',ffCss);
+      clearTimeout(this._fontDebounce);
+      this._fontDebounce=setTimeout(()=>this._recalcAfterFontChange(),350);
     }
+
+    // ---- 即时行距切换：只改CSS ----
+    changeLineHeight(lh){
+      this.lh=lh;
+      this.el.style.setProperty('--reader-line-height',lh);
+      clearTimeout(this._fontDebounce);
+      this._fontDebounce=setTimeout(()=>this._recalcAfterFontChange(),200);
+    }
+
+    _recalcAfterFontChange(){
+      for(let i=0;i<this.pages.length;i++){
+        this.pages[i].eh=Math.max(80,this.pages[i].cc*this.fs*0.052);
+        this.pages[i].ah=null;
+      }
+      for(const k in this.rendered){
+        const i=+k,el=this.rendered[i];
+        if(el&&el.offsetHeight>0)this.pages[i].ah=el.offsetHeight;
+      }
+      this._recalcCum();
+      const idx=Object.keys(this.rendered).map(Number).sort((a,b)=>a-b);
+      if(idx.length)this._updateSpacers(idx[0],idx[idx.length-1]);
+      this._prefetch();
+    }
+
+    destroy(){this.el.innerHTML='';this.rendered={};this.pages=[];this.raw='';this.mdCache={};}
   }
 
   // ====== 全局加载进度条 ======
-  const globalLoader = document.getElementById('globalLoader');
-  let loaderTimeout = null;
-  function showGlobalLoader(){ globalLoader.classList.remove('complete'); globalLoader.classList.add('loading'); clearTimeout(loaderTimeout); }
-  function hideGlobalLoader(){ globalLoader.classList.remove('loading'); globalLoader.classList.add('complete'); clearTimeout(loaderTimeout); loaderTimeout = setTimeout(()=>{ globalLoader.classList.remove('complete'); globalLoader.style.width='0'; }, 600); }
+  const globalLoader=document.getElementById('globalLoader');let loaderTimeout=null;
+  function showGlobalLoader(){globalLoader.classList.remove('complete');globalLoader.classList.add('loading');clearTimeout(loaderTimeout);}
+  function hideGlobalLoader(){globalLoader.classList.remove('loading');globalLoader.classList.add('complete');clearTimeout(loaderTimeout);loaderTimeout=setTimeout(()=>{globalLoader.classList.remove('complete');globalLoader.style.width='0';},600);}
 
-  // ====== Toast 通知系统 ======
-  const toastContainer = document.getElementById('toastContainer');
-  const toastIcons = { success:'✅', error:'❌', info:'ℹ️', warning:'⚠️' };
-  function showToast(msg, type='info', dur=3500){
-    const t = document.createElement('div');
-    t.className = 'toast';
-    t.innerHTML = `<span class="toast-icon">${toastIcons[type]||toastIcons.info}</span><span class="toast-msg">${escapeHtml(msg)}</span>`;
-    toastContainer.appendChild(t);
-    t.addEventListener('click', ()=>removeToast(t));
-    if(dur>0) setTimeout(()=>removeToast(t), dur);
-    while(toastContainer.children.length > 5) removeToast(toastContainer.firstChild);
+  // ====== Toast ======
+  const toastContainer=document.getElementById('toastContainer');
+  const toastIcons={success:'✅',error:'❌',info:'ℹ️',warning:'⚠️'};
+  function showToast(msg,type='info',dur=3500){
+    const t=document.createElement('div');t.className='toast';
+    t.innerHTML=`<span class="toast-icon">${toastIcons[type]||toastIcons.info}</span><span class="toast-msg">${escapeHtml(msg)}</span>`;
+    toastContainer.appendChild(t);t.addEventListener('click',()=>removeToast(t));
+    if(dur>0)setTimeout(()=>removeToast(t),dur);
+    while(toastContainer.children.length>5)removeToast(toastContainer.firstChild);
   }
-  function removeToast(t){ if(!t||!t.parentNode) return; t.classList.add('removing'); setTimeout(()=>{ if(t.parentNode) t.parentNode.removeChild(t); }, 300); }
+  function removeToast(t){if(!t||!t.parentNode)return;t.classList.add('removing');setTimeout(()=>{if(t.parentNode)t.parentNode.removeChild(t);},300);}
 
-  // ====== API 封装 ======
-  async function apiRequest(method, path, body, onProgress){
-    showGlobalLoader(); setNetStatus('loading');
-    const t0 = performance.now();
-    try {
+  // ====== API ======
+  async function apiRequest(method,path,body,onProgress){
+    showGlobalLoader();setNetStatus('loading');const t0=performance.now();
+    try{
       let res;
-      if(onProgress && body){
-        res = await new Promise((resolve, reject)=>{
-          const xhr = new XMLHttpRequest();
-          xhr.open(method, API_BASE + path);
-          xhr.setRequestHeader('Content-Type','application/json');
-          xhr.upload.onprogress = (e)=>{ if(e.lengthComputable){ onProgress(e.loaded, e.total); totalBytesSent += e.loaded; } };
-          xhr.onload = ()=>{
-            totalBytesReceived += parseInt(xhr.getResponseHeader('Content-Length')||0);
-            if(xhr.status>=200 && xhr.status<300){ if(xhr.status===204) resolve(null); else resolve(JSON.parse(xhr.responseText)); }
-            else { let err; try{ err=JSON.parse(xhr.responseText); }catch(_){ err={error:xhr.statusText}; } reject(new Error(err.error||xhr.statusText)); }
-          };
-          xhr.onerror = ()=>reject(new Error('网络错误'));
-          xhr.ontimeout = ()=>reject(new Error('请求超时'));
-          xhr.timeout = 120000;
-          xhr.send(JSON.stringify(body));
+      if(onProgress&&body){
+        res=await new Promise((resolve,reject)=>{
+          const xhr=new XMLHttpRequest();xhr.open(method,API_BASE+path);xhr.setRequestHeader('Content-Type','application/json');
+          xhr.upload.onprogress=(e)=>{if(e.lengthComputable){onProgress(e.loaded,e.total);totalBytesSent+=e.loaded;}};
+          xhr.onload=()=>{totalBytesReceived+=parseInt(xhr.getResponseHeader('Content-Length')||0);if(xhr.status>=200&&xhr.status<300){if(xhr.status===204)resolve(null);else resolve(JSON.parse(xhr.responseText));}else{let err;try{err=JSON.parse(xhr.responseText);}catch(_){err={error:xhr.statusText};}reject(new Error(err.error||xhr.statusText));}};
+          xhr.onerror=()=>reject(new Error('网络错误'));xhr.ontimeout=()=>reject(new Error('请求超时'));xhr.timeout=120000;xhr.send(JSON.stringify(body));
         });
-      } else {
-        const opts = { method, headers:{'Content-Type':'application/json'} };
-        if(body) opts.body = JSON.stringify(body);
-        const fr = await fetch(API_BASE + path, opts);
-        totalBytesReceived += parseInt(fr.headers.get('Content-Length')||0);
-        if(!fr.ok){ const err = await fr.json().catch(()=>({error:fr.statusText})); throw new Error(err.error||fr.statusText); }
-        if(fr.status===204) res=null; else res = await fr.json();
+      }else{
+        const opts={method,headers:{'Content-Type':'application/json'}};if(body)opts.body=JSON.stringify(body);
+        const fr=await fetch(API_BASE+path,opts);totalBytesReceived+=parseInt(fr.headers.get('Content-Length')||0);
+        if(!fr.ok){const err=await fr.json().catch(()=>({error:fr.statusText}));throw new Error(err.error||fr.statusText);}
+        if(fr.status===204)res=null;else res=await fr.json();
       }
-      apiLatencyValue = Math.round(performance.now() - t0);
-      updateApiLatency(); setNetStatus('online'); hideGlobalLoader();
-      return res;
-    } catch(err){
-      apiLatencyValue = Math.round(performance.now() - t0);
-      updateApiLatency(); setNetStatus(navigator.onLine?'online':'offline'); hideGlobalLoader();
-      throw err;
-    }
+      apiLatencyValue=Math.round(performance.now()-t0);updateApiLatency();setNetStatus('online');hideGlobalLoader();return res;
+    }catch(err){apiLatencyValue=Math.round(performance.now()-t0);updateApiLatency();setNetStatus(navigator.onLine?'online':'offline');hideGlobalLoader();throw err;}
   }
 
-  // ====== 网络状态 ======
-  function setNetStatus(s){ document.getElementById('netDot').className='status-dot '+s; document.getElementById('netStatus').textContent = s==='online'?'在线':s==='offline'?'离线':'加载中'; }
-  window.addEventListener('online', ()=>{ setNetStatus('online'); showToast('网络已恢复','success'); });
-  window.addEventListener('offline', ()=>{ setNetStatus('offline'); showToast('网络已断开，部分功能不可用','warning',6000); });
-  function updateApiLatency(){ const el=document.getElementById('apiLatency'); if(apiLatencyValue!==null){ const ic = apiLatencyValue<300?'⚡':apiLatencyValue<1000?'🔸':'🐌'; el.textContent=`${ic} ${apiLatencyValue}ms`; } }
+  function setNetStatus(s){document.getElementById('netDot').className='status-dot '+s;document.getElementById('netStatus').textContent=s==='online'?'在线':s==='offline'?'离线':'加载中';}
+  window.addEventListener('online',()=>{setNetStatus('online');showToast('网络已恢复','success');});
+  window.addEventListener('offline',()=>{setNetStatus('offline');showToast('网络已断开，部分功能不可用','warning',6000);});
+  function updateApiLatency(){const el=document.getElementById('apiLatency');if(apiLatencyValue!==null){const ic=apiLatencyValue<300?'⚡':apiLatencyValue<1000?'🔸':'🐌';el.textContent=`${ic} ${apiLatencyValue}ms`;}}
+  function updateClock(){const n=new Date();document.getElementById('clockStatus').textContent=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;}
+  setInterval(updateClock,1000);updateClock();
+  function formatBytes(b){if(b<1024)return b+'B';if(b<1048576)return(b/1024).toFixed(1)+'KB';return(b/1048576).toFixed(1)+'MB';}
+  function updateStorageStatus(){document.getElementById('librarySizeStatus').textContent=`💾 ${formatBytes(totalBytesSent+totalBytesReceived)}`;}
+  setInterval(updateStorageStatus,2000);
 
-  // ====== 底部状态栏 ======
-  function updateClock(){ const n=new Date(); document.getElementById('clockStatus').textContent=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`; }
-  setInterval(updateClock, 1000); updateClock();
-  function formatBytes(b){ if(b<1024) return b+'B'; if(b<1048576) return (b/1024).toFixed(1)+'KB'; return (b/1048576).toFixed(1)+'MB'; }
-  function updateStorageStatus(){ document.getElementById('librarySizeStatus').textContent = `💾 ${formatBytes(totalBytesSent + totalBytesReceived)}`; }
-  setInterval(updateStorageStatus, 2000);
-
-  // ====== 书库渲染 ======
+  // ====== 书库 ======
   async function loadLibrary(){
-    const c = document.getElementById('docListContainer');
-    c.innerHTML = '<div class="loading">⏳ 加载中...</div>';
-    try {
-      docList = await apiRequest('GET', '/reader/list');
-      updateDocCountStatus(); applyFiltersAndRender();
-      showToast(`已加载 ${docList.length} 篇文档`, 'success', 2000);
-    } catch(err){
-      c.innerHTML = `<div class="empty-state">加载失败：${escapeHtml(err.message)}</div>`;
-      showToast('加载书库失败：' + err.message, 'error');
-    }
+    const c=document.getElementById('docListContainer');c.innerHTML='<div class="loading">⏳ 加载中...</div>';
+    try{docList=await apiRequest('GET','/reader/list');updateDocCountStatus();applyFiltersAndRender();showToast(`已加载 ${docList.length} 篇文档`,'success',2000);}
+    catch(err){c.innerHTML=`<div class="empty-state">加载失败：${escapeHtml(err.message)}</div>`;showToast('加载书库失败：'+err.message,'error');}
   }
-  function updateDocCountStatus(){
-    const a = docList.filter(d=>!d.deleted).length;
-    const d2 = docList.filter(d=>d.deleted).length;
-    document.getElementById('docCountStatus').textContent = `📚 ${a} 篇${d2?` (♻️${d2})`:''}`;
-  }
+  function updateDocCountStatus(){const a=docList.filter(d=>!d.deleted).length,d2=docList.filter(d=>d.deleted).length;document.getElementById('docCountStatus').textContent=`📚 ${a} 篇${d2?` (♻️${d2})`:''}`;}
   function applyFiltersAndRender(){
-    filteredDocs = [...docList];
-    if(currentCategory!=='all') filteredDocs = filteredDocs.filter(d=>d.category===currentCategory);
-    if(currentSearchTerm){ const t=currentSearchTerm.toLowerCase(); filteredDocs = filteredDocs.filter(d=>d.title.toLowerCase().includes(t)||(d.tags&&d.tags.some(x=>x.toLowerCase().includes(t)))); }
-    filteredDocs.sort((a,b)=>{ if(currentSort==='title') return a.title.localeCompare(b.title); return (b[currentSort]||0)-(a[currentSort]||0); });
-    renderLibraryList(filteredDocs); updateCategoryFilter();
+    filteredDocs=[...docList];
+    if(currentCategory!=='all')filteredDocs=filteredDocs.filter(d=>d.category===currentCategory);
+    if(currentSearchTerm){const t=currentSearchTerm.toLowerCase();filteredDocs=filteredDocs.filter(d=>d.title.toLowerCase().includes(t)||(d.tags&&d.tags.some(x=>x.toLowerCase().includes(t))));}
+    filteredDocs.sort((a,b)=>{if(currentSort==='title')return a.title.localeCompare(b.title);return(b[currentSort]||0)-(a[currentSort]||0);});
+    renderLibraryList(filteredDocs);updateCategoryFilter();
   }
   function renderLibraryList(docs){
-    const c = document.getElementById('docListContainer');
-    if(docs.length===0){ c.innerHTML='<div class="empty-state">没有文档</div>'; return; }
+    const c=document.getElementById('docListContainer');
+    if(!docs.length){c.innerHTML='<div class="empty-state">没有文档</div>';return;}
     let html='<ul class="doc-list">';
     docs.forEach(doc=>{
-      const prog = doc.progress ? Math.round(doc.progress*100)+'%' : '未读';
-      const date = doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : '';
-      const dc = doc.deleted ? ' deleted-item' : '';
-      const sz = doc.content ? formatBytes(new Blob([doc.content]).size) : '';
-      html += `<li class="doc-item${dc}" data-id="${doc.id}"><div class="doc-icon">${doc.deleted?'♻️':'📄'}</div><div class="doc-info"><div class="doc-title">${escapeHtml(doc.title)}</div><div class="doc-meta"><span>${date}</span><span>${escapeHtml(doc.category||'未分类')}</span>${doc.tags&&doc.tags.length?`<span>🏷️ ${doc.tags.map(t=>escapeHtml(t)).join(', ')}</span>`:''}${sz?`<span>📦 ${sz}</span>`:''}<span class="doc-progress">${prog}</span></div></div><div class="doc-actions">${doc.deleted?`<button class="restore-btn" data-id="${doc.id}">恢复</button><button class="purge-btn" data-id="${doc.id}">彻底删除</button>`:`<button class="del-btn" data-id="${doc.id}">删除</button>`}</div></li>`;
+      const prog=doc.progress?Math.round(doc.progress*100)+'%':'未读';
+      const date=doc.createdAt?new Date(doc.createdAt).toLocaleDateString():'';
+      const dc=doc.deleted?' deleted-item':'';
+      const sz=doc.content?formatBytes(new Blob([doc.content]).size):'';
+      html+=`<li class="doc-item${dc}" data-id="${doc.id}"><div class="doc-icon">${doc.deleted?'♻️':'📄'}</div><div class="doc-info"><div class="doc-title">${escapeHtml(doc.title)}</div><div class="doc-meta"><span>${date}</span><span>${escapeHtml(doc.category||'未分类')}</span>${doc.tags&&doc.tags.length?`<span>🏷️ ${doc.tags.map(t=>escapeHtml(t)).join(', ')}</span>`:''}${sz?`<span>📦 ${sz}</span>`:''}<span class="doc-progress">${prog}</span></div></div><div class="doc-actions">${doc.deleted?`<button class="restore-btn" data-id="${doc.id}">恢复</button><button class="purge-btn" data-id="${doc.id}">彻底删除</button>`:`<button class="del-btn" data-id="${doc.id}">删除</button>`}</div></li>`;
     });
-    html+='</ul>'; c.innerHTML=html;
-    c.querySelectorAll('.doc-item').forEach(item=>{
-      item.addEventListener('click',(e)=>{ if(e.target.classList.contains('del-btn')||e.target.classList.contains('restore-btn')||e.target.classList.contains('purge-btn')) return; if(item.classList.contains('deleted-item')){ showToast('该文档在回收站中，请先恢复','warning'); return; } openReader(item.dataset.id); });
-    });
-    c.querySelectorAll('.del-btn').forEach(b=>b.addEventListener('click',async(e)=>{ e.stopPropagation(); if(confirm('确定将此文档移入回收站吗？')){ try{ await apiRequest('DELETE','/reader/delete?id='+encodeURIComponent(b.dataset.id)); showToast('已移入回收站','success'); await loadLibrary(); }catch(err){ showToast('删除失败：'+err.message,'error'); } } }));
-    c.querySelectorAll('.restore-btn').forEach(b=>b.addEventListener('click',async(e)=>{ e.stopPropagation(); try{ await apiRequest('POST','/reader/restore',{id:b.dataset.id}); showToast('文档已恢复','success'); await loadLibrary(); }catch(err){ showToast('恢复失败：'+err.message,'error'); } }));
-    c.querySelectorAll('.purge-btn').forEach(b=>b.addEventListener('click',async(e)=>{ e.stopPropagation(); if(confirm('彻底删除该文档？此操作不可撤销。')){ try{ await apiRequest('POST','/reader/empty-trash'); showToast('已彻底删除','success'); await loadLibrary(); }catch(err){ showToast('彻底删除失败：'+err.message,'error'); } } }));
+    html+='</ul>';c.innerHTML=html;
+    c.querySelectorAll('.doc-item').forEach(item=>{item.addEventListener('click',(e)=>{if(e.target.classList.contains('del-btn')||e.target.classList.contains('restore-btn')||e.target.classList.contains('purge-btn'))return;if(item.classList.contains('deleted-item')){showToast('该文档在回收站中，请先恢复','warning');return;}openReader(item.dataset.id);});});
+    c.querySelectorAll('.del-btn').forEach(b=>b.addEventListener('click',async(e)=>{e.stopPropagation();if(confirm('确定将此文档移入回收站吗？')){try{await apiRequest('DELETE','/reader/delete?id='+encodeURIComponent(b.dataset.id));showToast('已移入回收站','success');await loadLibrary();}catch(err){showToast('删除失败：'+err.message,'error');}}}));
+    c.querySelectorAll('.restore-btn').forEach(b=>b.addEventListener('click',async(e)=>{e.stopPropagation();try{await apiRequest('POST','/reader/restore',{id:b.dataset.id});showToast('文档已恢复','success');await loadLibrary();}catch(err){showToast('恢复失败：'+err.message,'error');}}));
+    c.querySelectorAll('.purge-btn').forEach(b=>b.addEventListener('click',async(e)=>{e.stopPropagation();if(confirm('彻底删除？不可撤销。')){try{await apiRequest('POST','/reader/empty-trash');showToast('已彻底删除','success');await loadLibrary();}catch(err){showToast('彻底删除失败：'+err.message,'error');}}}));
   }
-  function updateCategoryFilter(){
-    const sel=document.getElementById('categoryFilter');
-    const cats=new Set(docList.map(d=>d.category||'未分类'));
-    let h='<option value="all">全部分类</option>';
-    cats.forEach(c=>h+=`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`);
-    sel.innerHTML=h; sel.value=currentCategory;
-  }
+  function updateCategoryFilter(){const sel=document.getElementById('categoryFilter');const cats=new Set(docList.map(d=>d.category||'未分类'));let h='<option value="all">全部分类</option>';cats.forEach(c=>h+=`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`);sel.innerHTML=h;sel.value=currentCategory;}
 
-  // ====== 导入（带上传进度） ======
-  const importArea=document.getElementById('importArea');
-  const fileInput=document.getElementById('fileInput');
+  // ====== 导入 ======
+  const importArea=document.getElementById('importArea'),fileInput=document.getElementById('fileInput');
   importArea.addEventListener('dragover',e=>{e.preventDefault();importArea.classList.add('dragover');});
   importArea.addEventListener('dragleave',()=>importArea.classList.remove('dragover'));
   importArea.addEventListener('drop',e=>{e.preventDefault();importArea.classList.remove('dragover');handleFiles(e.dataTransfer.files);});
   fileInput.addEventListener('change',e=>handleFiles(e.target.files));
-
   async function handleFiles(files){
-    if(!files.length) return;
-    const panel=document.getElementById('uploadPanel');
-    const tasks=document.getElementById('uploadTasks');
-    panel.classList.add('active'); activeUploads=files.length;
-    let ok=0, fail=0;
+    if(!files.length)return;const panel=document.getElementById('uploadPanel'),tasks=document.getElementById('uploadTasks');
+    panel.classList.add('active');activeUploads=files.length;let ok=0,fail=0;
     for(let i=0;i<files.length;i++){
-      const file=files[i];
-      const tEl=document.createElement('div');
-      tEl.className='upload-task';
+      const file=files[i];const tEl=document.createElement('div');tEl.className='upload-task';
       tEl.innerHTML=`<div class="upload-task-info"><span class="upload-task-name">${escapeHtml(file.name)}</span><span class="upload-task-status">等待中...</span></div><div class="upload-bar-wrap"><div class="upload-bar uploading" style="width:0"></div></div><div class="upload-task-detail"><span class="upload-size">0 / ${formatBytes(file.size)}</span><span class="upload-speed"></span><span class="upload-eta"></span></div>`;
       tasks.appendChild(tEl);
-      const bar=tEl.querySelector('.upload-bar'), stEl=tEl.querySelector('.upload-task-status'), szEl=tEl.querySelector('.upload-size'), spEl=tEl.querySelector('.upload-speed'), etEl=tEl.querySelector('.upload-eta');
+      const bar=tEl.querySelector('.upload-bar'),stEl=tEl.querySelector('.upload-task-status'),szEl=tEl.querySelector('.upload-size'),spEl=tEl.querySelector('.upload-speed'),etEl=tEl.querySelector('.upload-eta');
       try{
-        stEl.textContent='读取中...';
-        const content=await readFileAsText(file);
-        const ext=file.name.split('.').pop().toLowerCase();
-        const title=file.name.replace(/\.[^.]+$/,'')||'未命名';
-        stEl.textContent='上传中...';
-        let lt=performance.now(), ll=0;
-        await apiRequest('POST','/reader/import',{title,content,category:'未分类',tags:[]},(loaded,total)=>{
-          const pct=Math.round((loaded/total)*100);
-          bar.style.width=pct+'%';
-          szEl.textContent=`${formatBytes(loaded)} / ${formatBytes(total)}`;
-          const now=performance.now(); const dt=(now-lt)/1000;
-          if(dt>0.3){ const sp=(loaded-ll)/dt; spEl.textContent=`${formatBytes(Math.round(sp))}/s`; if(sp>0) etEl.textContent=`剩余 ${Math.ceil((total-loaded)/sp)}s`; lt=now; ll=loaded; }
-          if(pct>=100){ stEl.textContent='处理中...'; bar.classList.remove('uploading'); bar.classList.add('done'); }
-        });
-        stEl.textContent='✅ 完成'; bar.classList.remove('uploading'); bar.classList.add('done'); bar.style.width='100%'; ok++; totalBytesSent+=file.size;
-      }catch(err){ stEl.textContent='❌ '+err.message; bar.classList.remove('uploading'); bar.classList.add('error'); fail++; showToast(`导入 ${file.name} 失败：${err.message}`,'error'); }
+        stEl.textContent='读取中...';const content=await readFileAsText(file);
+        const title=file.name.replace(/\.[^.]+$/,'')||'未命名';stEl.textContent='上传中...';
+        let lt=performance.now(),ll=0;
+        await apiRequest('POST','/reader/import',{title,content,category:'未分类',tags:[]},(loaded,total)=>{const pct=Math.round((loaded/total)*100);bar.style.width=pct+'%';szEl.textContent=`${formatBytes(loaded)} / ${formatBytes(total)}`;const now=performance.now();const dt=(now-lt)/1000;if(dt>0.3){const sp=(loaded-ll)/dt;spEl.textContent=`${formatBytes(Math.round(sp))}/s`;if(sp>0)etEl.textContent=`剩余 ${Math.ceil((total-loaded)/sp)}s`;lt=now;ll=loaded;}if(pct>=100){stEl.textContent='处理中...';bar.classList.remove('uploading');bar.classList.add('done');}});
+        stEl.textContent='✅ 完成';bar.classList.remove('uploading');bar.classList.add('done');bar.style.width='100%';ok++;totalBytesSent+=file.size;
+      }catch(err){stEl.textContent='❌ '+err.message;bar.classList.remove('uploading');bar.classList.add('error');fail++;showToast(`导入 ${file.name} 失败`,'error');}
       activeUploads--;
     }
     fileInput.value='';
-    if(ok>0) showToast(`成功导入 ${ok} 个文件${fail?`，${fail} 个失败`:''}`,'success');
-    setTimeout(()=>{ if(activeUploads===0){ panel.classList.remove('active'); tasks.innerHTML=''; } }, 3000);
+    if(ok>0)showToast(`成功导入 ${ok} 个文件${fail?`，${fail} 个失败`:''}`,'success');
+    setTimeout(()=>{if(activeUploads===0){panel.classList.remove('active');tasks.innerHTML='';}},3000);
     await loadLibrary();
   }
-  function readFileAsText(file){ return new Promise((resolve,reject)=>{ const r=new FileReader(); r.onload=e=>resolve(e.target.result); r.onerror=()=>reject(r.error); r.readAsText(file); }); }
+  function readFileAsText(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=e=>resolve(e.target.result);r.onerror=()=>reject(r.error);r.readAsText(file);});}
 
-  // ====== 打开阅读器（虚拟分页） ======
+  // ====== 打开阅读器 ======
   async function openReader(id){
-    currentDocId = id;
-    const prepOverlay = document.getElementById('contentPrepOverlay');
-    const prepText = document.getElementById('prepText');
-    prepText.textContent = '正在下载文档...';
-    prepOverlay.classList.add('active');
-
-    try {
-      const doc = await apiRequest('GET', '/reader/get?id=' + encodeURIComponent(id));
-      currentDocMeta = doc;
-      currentDocContent = doc.content || '';
-      currentDocType = (doc.title.endsWith('.md') || doc.title.endsWith('.markdown')) ? 'markdown' : 'txt';
-
-      document.getElementById('readerTitle').textContent = doc.title;
-
-      // 让遮罩渲染后再做重计算
-      await new Promise(r => setTimeout(r, 30));
-
-      prepText.textContent = '正在分页处理...';
-      await new Promise(r => setTimeout(r, 30));
-
-      // 创建虚拟分页引擎
-      const contentEl = document.getElementById('readerContent');
-      contentEl.innerHTML = '';
-      if (currentDocType === 'markdown') contentEl.classList.add('markdown');
-      else contentEl.classList.remove('markdown');
-
-      virtualReader = new VirtualReader(currentDocContent, contentEl, currentDocType === 'markdown', currentFontSize);
-
-      // 预提取目录
-      tocHeadings = virtualReader.getTOC();
-
-      // 更新统计
+    currentDocId=id;
+    const prepOverlay=document.getElementById('contentPrepOverlay'),prepText=document.getElementById('prepText');
+    prepText.textContent='正在下载文档...';prepOverlay.classList.add('active');
+    try{
+      const doc=await apiRequest('GET','/reader/get?id='+encodeURIComponent(id));
+      currentDocMeta=doc;currentDocContent=doc.content||'';
+      currentDocType=(doc.title.endsWith('.md')||doc.title.endsWith('.markdown'))?'markdown':'txt';
+      document.getElementById('readerTitle').textContent=doc.title;
+      await new Promise(r=>setTimeout(r,30));prepText.textContent='正在分页处理...';await new Promise(r=>setTimeout(r,30));
+      const contentEl=document.getElementById('readerContent');contentEl.innerHTML='';
+      if(currentDocType==='markdown')contentEl.classList.add('markdown');else contentEl.classList.remove('markdown');
+      const ffCss=FONT_MAP[currentFontFamilyId]?FONT_MAP[currentFontFamilyId].css:'sans-serif';
+      virtualReader=new VirtualReader(currentDocContent,contentEl,currentDocType==='markdown',currentFontSize,ffCss,currentLineHeight);
+      tocHeadings=virtualReader.getTOC();
       updateReadingStats();
-
-      // 初始化分页并恢复进度
-      const progress = doc.progress || 0;
-      virtualReader.init(progress);
-
-      // 切换页面
-      document.getElementById('libraryPage').style.display = 'none';
-      document.getElementById('readerPage').style.display = 'flex';
-      document.getElementById('readingProgressFloat').style.display = 'flex';
-      document.getElementById('readingInfoPanel').style.display = 'flex';
-      applyReaderSettings();
-      startSessionTimer();
-      updatePageInfo();
-      updateReadingProgressFloat();
-
+      virtualReader.init(doc.progress||0);
+      document.getElementById('libraryPage').style.display='none';
+      document.getElementById('readerPage').style.display='flex';
+      document.getElementById('readingProgressFloat').style.display='flex';
+      document.getElementById('readingInfoPanel').style.display='flex';
+      applyReaderSettings();startSessionTimer();updatePageInfo();updateReadingProgressFloat();
       prepOverlay.classList.remove('active');
-      showToast(`已打开：${doc.title}（${virtualReader.total} 页）`, 'info', 2500);
-    } catch(err) {
-      prepOverlay.classList.remove('active');
-      showToast('打开文档失败：' + err.message, 'error');
-    }
+      showToast(`已打开：${doc.title}（${virtualReader.total} 页）`,'info',2500);
+    }catch(err){prepOverlay.classList.remove('active');showToast('打开文档失败：'+err.message,'error');}
   }
 
   function closeReader(){
-    if(currentDocId && virtualReader){
-      // 保存进度
-      const info = virtualReader.onScroll();
-      const progress = info ? info.progress : 0;
-      apiRequest('POST', '/reader/progress', { id: currentDocId, progress }).catch(()=>{});
-      virtualReader.destroy();
-      virtualReader = null;
+    if(currentDocId&&virtualReader){
+      const info=virtualReader.onScroll();const progress=info?info.progress:0;
+      apiRequest('POST','/reader/progress',{id:currentDocId,progress}).catch(()=>{});
+      virtualReader.destroy();virtualReader=null;
     }
-    document.getElementById('readerPage').style.display = 'none';
-    document.getElementById('libraryPage').style.display = 'block';
-    document.getElementById('readingProgressFloat').style.display = 'none';
-    document.getElementById('readingInfoPanel').style.display = 'none';
-    currentDocId = null; currentDocMeta = null; currentDocContent = '';
-    tocHeadings = [];
-    stopSessionTimer();
-    loadLibrary();
+    document.getElementById('readerPage').style.display='none';
+    document.getElementById('libraryPage').style.display='block';
+    document.getElementById('readingProgressFloat').style.display='none';
+    document.getElementById('readingInfoPanel').style.display='none';
+    currentDocId=null;currentDocMeta=null;currentDocContent='';tocHeadings=[];
+    stopSessionTimer();loadLibrary();
   }
 
   // ====== 阅读设置 ======
   function applyReaderSettings(){
-    const ce = document.getElementById('readerContent');
-    ce.style.fontSize = currentFontSize + 'px';
-    ce.style.lineHeight = '1.8';
-    document.body.className = 'theme-' + currentTheme;
+    const ce=document.getElementById('readerContent');
+    ce.style.setProperty('--reader-font-size',currentFontSize+'px');
+    ce.style.setProperty('--reader-font-family',FONT_MAP[currentFontFamilyId]?FONT_MAP[currentFontFamilyId].css:'sans-serif');
+    ce.style.setProperty('--reader-line-height',currentLineHeight);
+    document.body.className='theme-'+currentTheme;
+    document.getElementById('fontSizeInput').value=currentFontSize;
+    document.getElementById('fontFamilySelect').value=currentFontFamilyId;
+    document.getElementById('lineHeightSelect').value=currentLineHeight;
+    // 主题按钮高亮
+    document.querySelectorAll('#themeLight,#themeDark,#themeSepia').forEach(b=>b.classList.remove('active'));
+    const themeMap={light:'themeLight',dark:'themeDark',sepia:'themeSepia'};
+    const btn=document.getElementById(themeMap[currentTheme]);
+    if(btn)btn.classList.add('active');
   }
 
-  document.getElementById('backBtn').addEventListener('click', closeReader);
-  document.getElementById('fontMinus').addEventListener('click', () => {
-    currentFontSize = Math.max(12, currentFontSize - 1);
-    document.getElementById('fontSizeInput').value = currentFontSize;
+  document.getElementById('backBtn').addEventListener('click',closeReader);
+
+  // 字号 —— 即时切换，零卡顿
+  document.getElementById('fontMinus').addEventListener('click',()=>{currentFontSize=Math.max(12,currentFontSize-1);document.getElementById('fontSizeInput').value=currentFontSize;applyReaderSettings();if(virtualReader)virtualReader.changeFontSize(currentFontSize);saveSettings();});
+  document.getElementById('fontPlus').addEventListener('click',()=>{currentFontSize=Math.min(32,currentFontSize+1);document.getElementById('fontSizeInput').value=currentFontSize;applyReaderSettings();if(virtualReader)virtualReader.changeFontSize(currentFontSize);saveSettings();});
+  document.getElementById('fontSizeInput').addEventListener('change',(e)=>{currentFontSize=Math.max(12,Math.min(32,parseInt(e.target.value)||16));e.target.value=currentFontSize;applyReaderSettings();if(virtualReader)virtualReader.changeFontSize(currentFontSize);saveSettings();});
+
+  // 字体选择
+  document.getElementById('fontFamilySelect').addEventListener('change',(e)=>{
+    currentFontFamilyId=e.target.value;
+    const ff=FONT_MAP[currentFontFamilyId]||FONT_MAP.system;
     applyReaderSettings();
-    if(virtualReader) virtualReader.rebuildForFont(currentFontSize);
+    if(virtualReader)virtualReader.changeFontFamily(ff.css);
+    saveSettings();
+    showToast(`字体已切换：${ff.name}`,'info',1500);
   });
-  document.getElementById('fontPlus').addEventListener('click', () => {
-    currentFontSize = Math.min(28, currentFontSize + 1);
-    document.getElementById('fontSizeInput').value = currentFontSize;
+
+  // 行距选择
+  document.getElementById('lineHeightSelect').addEventListener('change',(e)=>{
+    currentLineHeight=e.target.value;
     applyReaderSettings();
-    if(virtualReader) virtualReader.rebuildForFont(currentFontSize);
+    if(virtualReader)virtualReader.changeLineHeight(currentLineHeight);
+    saveSettings();
   });
-  document.getElementById('fontSizeInput').addEventListener('change', (e) => {
-    currentFontSize = parseInt(e.target.value) || 16;
-    if(currentFontSize < 12) currentFontSize = 12;
-    if(currentFontSize > 28) currentFontSize = 28;
-    e.target.value = currentFontSize;
-    applyReaderSettings();
-    if(virtualReader) virtualReader.rebuildForFont(currentFontSize);
-  });
-  document.getElementById('themeLight').addEventListener('click', () => { currentTheme='light'; applyReaderSettings(); });
-  document.getElementById('themeDark').addEventListener('click', () => { currentTheme='dark'; applyReaderSettings(); });
-  document.getElementById('themeSepia').addEventListener('click', () => { currentTheme='sepia'; applyReaderSettings(); });
+
+  // 主题
+  document.getElementById('themeLight').addEventListener('click',()=>{currentTheme='light';applyReaderSettings();saveSettings();});
+  document.getElementById('themeDark').addEventListener('click',()=>{currentTheme='dark';applyReaderSettings();saveSettings();});
+  document.getElementById('themeSepia').addEventListener('click',()=>{currentTheme='sepia';applyReaderSettings();saveSettings();});
 
   // ====== 页码导航 ======
-  document.getElementById('prevPageBtn').addEventListener('click', () => {
-    if(virtualReader) virtualReader.jumpToPage(virtualReader.cur - 1);
-    updatePageInfo(); updateReadingProgressFloat();
-  });
-  document.getElementById('nextPageBtn').addEventListener('click', () => {
-    if(virtualReader) virtualReader.jumpToPage(virtualReader.cur + 1);
-    updatePageInfo(); updateReadingProgressFloat();
-  });
-  document.getElementById('pageJumpInput').addEventListener('change', (e) => {
-    if(!virtualReader) return;
-    const p = parseInt(e.target.value) - 1;
-    if(p >= 0 && p < virtualReader.total) virtualReader.jumpToPage(p);
-    e.target.value = (virtualReader.cur + 1);
-    updatePageInfo(); updateReadingProgressFloat();
-  });
+  document.getElementById('prevPageBtn').addEventListener('click',()=>{if(virtualReader)virtualReader.jumpToPage(virtualReader.cur-1);updatePageInfo();updateReadingProgressFloat();});
+  document.getElementById('nextPageBtn').addEventListener('click',()=>{if(virtualReader)virtualReader.jumpToPage(virtualReader.cur+1);updatePageInfo();updateReadingProgressFloat();});
+  document.getElementById('pageJumpInput').addEventListener('change',(e)=>{if(!virtualReader)return;const p=parseInt(e.target.value)-1;if(p>=0&&p<virtualReader.total)virtualReader.jumpToPage(p);e.target.value=(virtualReader.cur+1);updatePageInfo();updateReadingProgressFloat();});
+  function updatePageInfo(){if(!virtualReader)return;const c=virtualReader.cur+1,t=virtualReader.total;document.getElementById('pageInfoText').textContent=`${c}/${t}`;document.getElementById('pageJumpInput').value=c;document.getElementById('pageJumpInput').max=t;}
 
-  function updatePageInfo(){
-    if(!virtualReader) return;
-    const cur = virtualReader.cur + 1;
-    const tot = virtualReader.total;
-    document.getElementById('pageInfoText').textContent = `${cur}/${tot}`;
-    document.getElementById('pageJumpInput').value = cur;
-    document.getElementById('pageJumpInput').max = tot;
-  }
+  // ====== 统计 ======
+  function updateReadingStats(){if(!virtualReader)return;const w=virtualReader.totalWords,r=Math.ceil(w/400);document.getElementById('wordCount').textContent=`字数：${w}`;document.getElementById('readTime').textContent=`约${r}分钟`;document.getElementById('totalWordsInfo').textContent=`${w}字`;}
 
-  // ====== 阅读统计（预计算，O(1)） ======
-  function updateReadingStats(){
-    if(!virtualReader) return;
-    const words = virtualReader.totalWords;
-    const readTime = Math.ceil(words / 400);
-    document.getElementById('wordCount').textContent = `字数：${words}`;
-    document.getElementById('readTime').textContent = `约${readTime}分钟`;
-    document.getElementById('totalWordsInfo').textContent = `${words}字`;
-  }
-
-  // ====== 阅读进度浮动指示器 ======
   function updateReadingProgressFloat(){
-    if(!virtualReader) return;
-    const info = virtualReader.onScroll();
-    if(!info) return;
-    const pct = Math.round(info.progress * 100);
-
-    const circ = 2 * Math.PI * 17;
-    document.getElementById('progressRingFg').style.strokeDashoffset = circ * (1 - info.progress);
-    document.getElementById('progressRingText').textContent = pct + '%';
-    document.getElementById('progressLabel').textContent = `第${info.page}/${info.total}页 ${pct}%`;
-    document.getElementById('positionInfo').textContent = pct + '%';
-    document.getElementById('wordsReadInfo').textContent = `${info.wordsRead} / ${info.totalWords}字`;
-    const remMin = Math.ceil((info.totalWords - info.wordsRead) / 400);
-    document.getElementById('remainTimeInfo').textContent = `剩${remMin}分钟`;
-    document.getElementById('pageInfoText').textContent = `${info.page}/${info.total}`;
+    if(!virtualReader)return;const info=virtualReader.onScroll();if(!info)return;
+    const pct=Math.round(info.progress*100),circ=2*Math.PI*17;
+    document.getElementById('progressRingFg').style.strokeDashoffset=circ*(1-info.progress);
+    document.getElementById('progressRingText').textContent=pct+'%';
+    document.getElementById('progressLabel').textContent=`第${info.page}/${info.total}页 ${pct}%`;
+    document.getElementById('positionInfo').textContent=pct+'%';
+    document.getElementById('wordsReadInfo').textContent=`${info.wordsRead} / ${info.totalWords}字`;
+    document.getElementById('remainTimeInfo').textContent=`剩${Math.ceil((info.totalWords-info.wordsRead)/400)}分钟`;
+    document.getElementById('pageInfoText').textContent=`${info.page}/${info.total}`;
   }
 
-  // 滚动监听（rAF 节流）
-  let scrollTick = false;
-  document.getElementById('readerContent').addEventListener('scroll', () => {
-    if(scrollTick) return;
-    scrollTick = true;
-    requestAnimationFrame(() => {
-      updateReadingProgressFloat();
-      scrollTick = false;
-    });
-  });
+  // passive scroll listener
+  let scrollTick=false;
+  document.getElementById('readerContent').addEventListener('scroll',()=>{if(scrollTick)return;scrollTick=true;requestAnimationFrame(()=>{updateReadingProgressFloat();scrollTick=false;});},{passive:true});
 
-  // ====== 阅读会话计时器 ======
-  function startSessionTimer(){
-    sessionStartTime = Date.now();
-    if(sessionTimerInterval) clearInterval(sessionTimerInterval);
-    sessionTimerInterval = setInterval(() => {
-      const el = Math.floor((Date.now() - sessionStartTime) / 1000);
-      document.getElementById('sessionTimer').textContent = `${Math.floor(el/60)}:${String(el%60).padStart(2,'0')}`;
-    }, 1000);
-  }
-  function stopSessionTimer(){ if(sessionTimerInterval){ clearInterval(sessionTimerInterval); sessionTimerInterval=null; } sessionStartTime=null; }
+  // ====== 会话计时器 ======
+  function startSessionTimer(){sessionStartTime=Date.now();if(sessionTimerInterval)clearInterval(sessionTimerInterval);sessionTimerInterval=setInterval(()=>{const el=Math.floor((Date.now()-sessionStartTime)/1000);document.getElementById('sessionTimer').textContent=`${Math.floor(el/60)}:${String(el%60).padStart(2,'0')}`;},1000);}
+  function stopSessionTimer(){if(sessionTimerInterval){clearInterval(sessionTimerInterval);sessionTimerInterval=null;}sessionStartTime=null;}
 
-  // ====== 目录（带页码跳转） ======
-  document.getElementById('tocBtn').addEventListener('click', () => {
-    if(!tocHeadings.length){ showToast('未检测到章节标题','warning'); return; }
-    let html = '';
-    tocHeadings.forEach((h, i) => {
-      html += `<div class="toc-item" data-page="${h.page}" style="padding-left:${(h.level-1)*16}px">${escapeHtml(h.text)} <span style="font-size:.7rem;color:var(--fg2)">P${h.page+1}</span></div>`;
-    });
-    showModal('目录', html);
-    document.querySelectorAll('.toc-item').forEach(item => {
-      item.addEventListener('click', () => {
-        if(virtualReader) virtualReader.jumpToPage(parseInt(item.dataset.page));
-        closeModal();
-        updatePageInfo();
-      });
-    });
+  // ====== 目录 ======
+  document.getElementById('tocBtn').addEventListener('click',()=>{
+    if(!tocHeadings.length){showToast('未检测到章节标题','warning');return;}
+    let html='';
+    tocHeadings.forEach(h=>{html+=`<div class="toc-item" data-page="${h.page}" style="padding-left:${(h.level-1)*16}px">${escapeHtml(h.text)} <span style="font-size:.7rem;color:var(--fg2)">P${h.page+1}</span></div>`;});
+    showModal('目录',html);
+    document.querySelectorAll('.toc-item').forEach(item=>{item.addEventListener('click',()=>{if(virtualReader)virtualReader.jumpToPage(parseInt(item.dataset.page));closeModal();updatePageInfo();});});
   });
 
   // ====== 书签 ======
-  document.getElementById('bookmarkBtn').addEventListener('click', async () => {
-    if(!currentDocId || !currentDocMeta || !virtualReader) return;
-    const info = virtualReader.onScroll();
-    const progress = info ? info.progress : 0;
-    const page = info ? info.page : 1;
-    const note = prompt('书签备注（可选）');
-    const bookmark = { progress, note: note||'', time: Date.now(), page };
-    currentDocMeta.bookmarks = currentDocMeta.bookmarks || [];
-    currentDocMeta.bookmarks.push(bookmark);
-    try {
-      await apiRequest('POST', '/reader/update', { id: currentDocId, bookmarks: currentDocMeta.bookmarks });
-      showToast('书签已保存', 'success');
-      showModal('书签', currentDocMeta.bookmarks.map((b, i) =>
-        `<div class="bookmark-item"><span>P${b.page||1} · ${Math.round(b.progress*100)}%</span><span>${escapeHtml(b.note||'无备注')}</span><button onclick="jumpToBookmark(${i})">跳转</button></div>`
-      ).join(''));
-    } catch(err){ showToast('保存书签失败：' + err.message, 'error'); }
+  document.getElementById('bookmarkBtn').addEventListener('click',async()=>{
+    if(!currentDocId||!currentDocMeta||!virtualReader)return;
+    const info=virtualReader.onScroll();const progress=info?info.progress:0;const page=info?info.page:1;
+    const note=prompt('书签备注（可选）');
+    currentDocMeta.bookmarks=currentDocMeta.bookmarks||[];
+    currentDocMeta.bookmarks.push({progress,note:note||'',time:Date.now(),page});
+    try{await apiRequest('POST','/reader/update',{id:currentDocId,bookmarks:currentDocMeta.bookmarks});showToast('书签已保存','success');
+      showModal('书签',currentDocMeta.bookmarks.map((b,i)=>`<div class="bookmark-item"><span>P${b.page||1} · ${Math.round(b.progress*100)}%</span><span>${escapeHtml(b.note||'无备注')}</span><button onclick="jumpToBookmark(${i})">跳转</button></div>`).join(''));
+    }catch(err){showToast('保存书签失败：'+err.message,'error');}
   });
-  window.jumpToBookmark = function(i){
-    if(!currentDocMeta || !currentDocMeta.bookmarks[i] || !virtualReader) return;
-    virtualReader.jumpToProgress(currentDocMeta.bookmarks[i].progress);
-    closeModal();
-    updatePageInfo();
-  };
+  window.jumpToBookmark=function(i){if(!currentDocMeta||!currentDocMeta.bookmarks[i]||!virtualReader)return;virtualReader.jumpToProgress(currentDocMeta.bookmarks[i].progress);closeModal();updatePageInfo();};
 
-  // ====== 全文搜索（原始字符串扫描 + 跳页定位） ======
-  document.getElementById('searchDocBtn').addEventListener('click', () => {
-    if(!virtualReader) return;
-    const kw = prompt('输入搜索关键词：');
-    if(!kw) return;
-
-    const results = virtualReader.search(kw, 200);
-    if(results.length === 0){ showToast('未找到匹配项','warning'); return; }
-
-    showToast(`共找到 ${results.length} 处匹配`, 'info');
-
-    // 构建结果列表
-    let html = `<div style="font-size:.8rem;color:var(--fg2);margin-bottom:8px">${results.length} 处匹配</div>`;
-    results.forEach((r, i) => {
-      // 高亮关键词
-      const ctx = escapeHtml(r.ctx).replace(new RegExp(escapeRegex(kw)), m => `<mark>${m}</mark>`);
-      html += `<div class="search-result-item" data-page="${r.page}">
-        <div>${i+1}.</div>
-        <div class="search-result-context">${ctx}</div>
-        <div class="search-result-page">第 ${r.page+1} 页</div>
-      </div>`;
-    });
-    showModal('搜索结果', html);
-
-    document.querySelectorAll('.search-result-item').forEach(item => {
-      item.addEventListener('click', () => {
-        const p = parseInt(item.dataset.page);
-        if(virtualReader) virtualReader.jumpToPage(p);
-        closeModal();
-        updatePageInfo();
-        updateReadingProgressFloat();
-        showToast(`已跳转到第 ${p+1} 页`, 'info', 1500);
-      });
-    });
+  // ====== 全文搜索 ======
+  document.getElementById('searchDocBtn').addEventListener('click',()=>{
+    if(!virtualReader)return;const kw=prompt('输入搜索关键词：');if(!kw)return;
+    const results=virtualReader.search(kw,200);
+    if(!results.length){showToast('未找到匹配项','warning');return;}
+    showToast(`共找到 ${results.length} 处匹配`,'info');
+    let html=`<div style="font-size:.8rem;color:var(--fg2);margin-bottom:8px">${results.length} 处匹配</div>`;
+    results.forEach((r,i)=>{const ctx=escapeHtml(r.ctx).replace(new RegExp(escapeRegex(kw)),m=>`<mark>${m}</mark>`);html+=`<div class="search-result-item" data-page="${r.page}"><div>${i+1}.</div><div class="search-result-context">${ctx}</div><div class="search-result-page">第 ${r.page+1} 页</div></div>`;});
+    showModal('搜索结果',html);
+    document.querySelectorAll('.search-result-item').forEach(item=>{item.addEventListener('click',()=>{const p=parseInt(item.dataset.page);if(virtualReader)virtualReader.jumpToPage(p);closeModal();updatePageInfo();updateReadingProgressFloat();showToast(`已跳转到第 ${p+1} 页`,'info',1500);});});
   });
 
-  // ====== 弹窗通用 ======
-  function showModal(title, contentHTML){
-    document.getElementById('modalContainer').innerHTML =
-      `<div class="modal"><div class="modal-card"><div class="modal-header"><span class="modal-title">${escapeHtml(title)}</span><button class="modal-close" onclick="closeModal()">×</button></div><div class="modal-body">${contentHTML}</div></div></div>`;
-  }
-  window.closeModal = function(){ document.getElementById('modalContainer').innerHTML = ''; };
+  // ====== 弹窗 ======
+  function showModal(title,contentHTML){document.getElementById('modalContainer').innerHTML=`<div class="modal"><div class="modal-card"><div class="modal-header"><span class="modal-title">${escapeHtml(title)}</span><button class="modal-close" onclick="closeModal()">×</button></div><div class="modal-body">${contentHTML}</div></div></div>`;}
+  window.closeModal=function(){document.getElementById('modalContainer').innerHTML='';};
 
-  // ====== 工具栏事件 ======
-  document.getElementById('searchInput').addEventListener('input', e => { currentSearchTerm=e.target.value.trim(); applyFiltersAndRender(); });
-  document.getElementById('sortSelect').addEventListener('change', e => { currentSort=e.target.value; applyFiltersAndRender(); });
-  document.getElementById('categoryFilter').addEventListener('change', e => { currentCategory=e.target.value; applyFiltersAndRender(); });
-  document.getElementById('trashBtn').addEventListener('click', () => {
-    if(confirm('清空回收站？')){ apiRequest('POST','/reader/empty-trash').then(()=>{ showToast('回收站已清空','success'); loadLibrary(); }).catch(err=>showToast('清空失败：'+err.message,'error')); }
-  });
-  document.getElementById('deleteDocBtn').addEventListener('click', async () => {
-    if(!currentDocId) return;
-    if(confirm('确定将此文档移入回收站吗？')){
-      try{ await apiRequest('DELETE','/reader/delete?id='+encodeURIComponent(currentDocId)); showToast('已移入回收站','success'); closeReader(); }
-      catch(err){ showToast('删除失败：'+err.message,'error'); }
-    }
-  });
+  // ====== 工具栏 ======
+  document.getElementById('searchInput').addEventListener('input',e=>{currentSearchTerm=e.target.value.trim();applyFiltersAndRender();});
+  document.getElementById('sortSelect').addEventListener('change',e=>{currentSort=e.target.value;applyFiltersAndRender();});
+  document.getElementById('categoryFilter').addEventListener('change',e=>{currentCategory=e.target.value;applyFiltersAndRender();});
+  document.getElementById('trashBtn').addEventListener('click',()=>{if(confirm('清空回收站？')){apiRequest('POST','/reader/empty-trash').then(()=>{showToast('回收站已清空','success');loadLibrary();}).catch(err=>showToast('清空失败：'+err.message,'error'));}});
+  document.getElementById('deleteDocBtn').addEventListener('click',async()=>{if(!currentDocId)return;if(confirm('确定将此文档移入回收站吗？')){try{await apiRequest('DELETE','/reader/delete?id='+encodeURIComponent(currentDocId));showToast('已移入回收站','success');closeReader();}catch(err){showToast('删除失败：'+err.message,'error');}}});
 
   // ====== 工具函数 ======
-  function escapeHtml(s){ if(s==null) return ''; return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
-  function escapeRegex(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+  function escapeHtml(s){if(s==null)return'';return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);}
+  function escapeRegex(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
 
   // ====== 初始化 ======
-  showGlobalLoader(); setNetStatus('loading');
-  window.addEventListener('load', () => { showToast('阅读器已加载完成','success',2000); setTimeout(hideGlobalLoader, 500); });
-  setInterval(updateStorageStatus, 3000);
+  applyReaderSettings();
+  showGlobalLoader();setNetStatus('loading');
+  window.addEventListener('load',()=>{showToast('阅读器已加载完成','success',2000);setTimeout(hideGlobalLoader,500);});
+  setInterval(updateStorageStatus,3000);
   loadLibrary();
 })();
 </script>
